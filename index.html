@@ -302,10 +302,10 @@ function schema() {
 async function loadFromCloud() {
   ss('loading', 'Chargement...');
   try {
-    var res = await fetch(AURL + '/latest', { headers: { 'X-Access-Key': AKEY } });
+    var res = await fetch(AURL + '/persons.json');
     if (!res.ok) throw new Error(res.status);
     var data = await res.json();
-    S.persons = data.record && data.record.persons ? data.record.persons : {};
+    S.persons = data ? data : {};
     schema();
     ss('ok', 'Synchronise ' + new Date().toLocaleTimeString('fr-FR'));
   } catch(e) {
