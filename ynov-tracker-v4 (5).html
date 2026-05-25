@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YNOV Toulouse — Suivi Activité</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d0f14;--surface:#141720;--surface2:#1c2030;--border:#252a3a;--accent:#e8ff3c;--adm:#3ce8c8;--biz:#e8a03c;--text:#e8eaf0;--muted:#6b7280;--done:#22c55e;--partial:#f59e0b;--missed:#ef4444;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;overflow-x:hidden;}
+header{padding:1.5rem 2.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:100;}
+.logo-name{font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;letter-spacing:0.08em;}
+.logo-sub{font-size:0.62rem;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-top:0.15rem;}
+.week-display{font-size:0.72rem;color:var(--muted);text-align:right;}
+.week-display strong{color:var(--accent);display:block;font-size:0.85rem;}
+.sync-bar{background:var(--surface2);border-bottom:1px solid var(--border);padding:0.45rem 2.5rem;display:flex;align-items:center;gap:0.75rem;font-size:0.68rem;color:var(--muted);}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background 0.3s;}
+.sync-dot.ok{background:var(--done);}
+.sync-dot.err{background:var(--missed);}
+.sync-dot.loading{background:var(--partial);animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.team-switcher{display:flex;padding:0 2.5rem;border-bottom:1px solid var(--border);}
+.team-tab{padding:0.7rem 2rem;font-family:'Syne',sans-serif;font-weight:600;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;border:none;background:transparent;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.2s;}
+.team-tab.adm.active{color:var(--adm);border-bottom-color:var(--adm);}
+.team-tab.biz.active{color:var(--biz);border-bottom-color:var(--biz);}
+.team-tab:hover:not(.active){color:var(--text);}
+.container{padding:2rem 2.5rem;max-width:1500px;}
+.top-actions{display:flex;gap:0.75rem;margin-bottom:2rem;align-items:center;justify-content:space-between;flex-wrap:wrap;}
+.top-left{display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;}
+.week-nav{display:flex;align-items:center;gap:0.3rem;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:0.3rem 0.5rem;}
+.week-nav button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.9rem;padding:0 0.3rem;}
+.week-nav button:hover{color:var(--accent);}
+.week-nav span{font-size:0.7rem;color:var(--text);padding:0 0.4rem;min-width:90px;text-align:center;}
+.add-person-row{display:flex;gap:0.5rem;}
+.add-person-row input{background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.78rem;padding:0.45rem 0.8rem;outline:none;width:200px;}
+.btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:0.72rem;padding:0.45rem 0.9rem;border-radius:6px;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+.btn:hover{border-color:var(--accent);color:var(--accent);}
+.btn.primary{background:var(--accent);color:#0d0f14;border-color:var(--accent);font-weight:500;}
+.btn.primary:hover{opacity:0.85;color:#0d0f14;}
+.btn.sm{font-size:0.65rem;padding:0.3rem 0.6rem;}
+.btn.danger:hover{border-color:var(--missed);color:var(--missed);}
+.persons-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(500px,1fr));gap:1.5rem;}
+.person-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.person-card.adm{border-top:2px solid var(--adm);}
+.person-card.biz{border-top:2px solid var(--biz);}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:0.9rem 1.25rem;border-bottom:1px solid var(--border);background:var(--surface2);}
+.card-name{font-family:'Syne',sans-serif;font-weight:700;font-size:0.88rem;}
+.card-btns{display:flex;gap:0.4rem;align-items:center;}
+.filiere-bar{display:flex;align-items:center;padding:0 1.25rem;background:var(--surface2);border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;min-height:36px;}
+.filiere-bar::-webkit-scrollbar{display:none;}
+.ftab{padding:0.45rem 0.8rem;font-size:0.62rem;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;border:none;background:transparent;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap;flex-shrink:0;}
+.ftab.active-adm{color:var(--adm);border-bottom-color:var(--adm);}
+.ftab.active-biz{color:var(--biz);border-bottom-color:var(--biz);}
+.fadd{display:flex;align-items:center;gap:0.3rem;margin-left:0.5rem;flex-shrink:0;}
+.fadd input{background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.62rem;padding:0.2rem 0.5rem;outline:none;width:100px;}
+.kpi-band{display:grid;border-bottom:1px solid var(--border);}
+.kpi-cell{padding:0.65rem 0.5rem;text-align:center;border-right:1px solid var(--border);}
+.kpi-cell:last-child{border-right:none;}
+.kpi-label{font-size:0.5rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;line-height:1.3;margin-bottom:0.2rem;}
+.kpi-value{font-family:'DM Serif Display',serif;font-size:1.4rem;line-height:1;}
+.kpi-value.adm{color:var(--adm);}
+.kpi-value.biz{color:var(--biz);}
+.no-filiere{padding:0.6rem 1.25rem;font-size:0.7rem;color:var(--muted);font-style:italic;border-bottom:1px solid var(--border);}
+.card-section{padding:0.9rem 1.25rem;border-bottom:1px solid var(--border);}
+.card-section:last-child{border-bottom:none;}
+.section-title{font-size:0.58rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--muted);margin-bottom:0.6rem;display:flex;justify-content:space-between;align-items:center;}
+.taction{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0.6rem 0.8rem;margin-bottom:0.5rem;}
+.taction:last-child{margin-bottom:0;}
+.ta-lbl{font-size:0.56rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.3rem;}
+.ta-content{font-size:0.74rem;line-height:1.5;white-space:pre-wrap;}
+.ta-empty{font-size:0.7rem;color:var(--muted);font-style:italic;}
+.shot-block{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0.6rem 0.8rem;}
+.shot-slot{background:var(--bg);border:1px dashed var(--border);border-radius:6px;padding:0.5rem;text-align:center;min-width:150px;}
+.shot-slot img{max-width:100%;max-height:110px;border-radius:4px;display:block;margin:0 auto 0.3rem;object-fit:contain;}
+.shot-empty{font-size:0.65rem;color:var(--muted);padding:0.8rem 0;}
+.pipe-item{display:flex;align-items:flex-start;gap:0.5rem;padding:0.4rem 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.74rem;}
+.pipe-item:last-child{border-bottom:none;}
+.pi-main{flex:1;}
+.pi-badge{font-size:0.6rem;padding:0.15rem 0.5rem;border-radius:4px;cursor:pointer;border:none;font-family:'DM Mono',monospace;text-transform:uppercase;flex-shrink:0;}
+.ps-prospect{background:rgba(107,114,128,0.2);color:var(--muted);}
+.ps-contact{background:rgba(232,160,60,0.2);color:var(--biz);}
+.ps-rdv{background:rgba(60,232,200,0.15);color:var(--adm);}
+.ps-negocia{background:rgba(245,158,11,0.2);color:var(--partial);}
+.ps-signe{background:rgba(34,197,94,0.2);color:var(--done);}
+.ps-perdu{background:rgba(239,68,68,0.15);color:var(--missed);}
+.pi-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.68rem;flex-shrink:0;}
+.pi-btn:hover{color:var(--missed);}
+.strat{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.74rem;padding:0.5rem 0.7rem;outline:none;resize:vertical;min-height:58px;}
+.strat:focus{border-color:var(--biz);}
+.empty-state{text-align:center;padding:4rem 2rem;color:var(--muted);font-size:0.8rem;display:none;}
+.empty-state.show{display:block;}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;}
+.overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:min(480px,93vw);padding:1.75rem;max-height:90vh;overflow-y:auto;}
+.modal h3{font-family:'Syne',sans-serif;font-weight:700;font-size:0.95rem;margin-bottom:1.2rem;}
+.modal label{display:block;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);margin-bottom:0.3rem;margin-top:0.8rem;}
+.modal input,.modal textarea,.modal select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.78rem;padding:0.5rem 0.75rem;outline:none;}
+.modal textarea{resize:vertical;min-height:80px;}
+.modal select option{background:var(--surface);}
+.mfooter{display:flex;gap:0.75rem;justify-content:flex-end;margin-top:1.5rem;}
+.modal-sep{font-size:0.6rem;color:var(--biz);text-transform:uppercase;letter-spacing:0.12em;margin-top:1rem;padding-top:0.8rem;border-top:1px solid var(--border);}
+.rpanel{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);z-index:300;overflow-y:auto;}
+.rpanel.open{display:block;}
+.rinner{max-width:900px;margin:3rem auto 4rem;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:3rem;}
+.rclose{float:right;cursor:pointer;font-size:0.72rem;color:var(--muted);background:var(--surface2);border:1px solid var(--border);padding:0.35rem 0.8rem;border-radius:6px;font-family:'DM Mono',monospace;}
+.rtitle{font-family:'DM Serif Display',serif;font-size:2.2rem;margin-bottom:0.4rem;clear:both;}
+.rmeta{font-size:0.7rem;color:var(--muted);margin-bottom:2.5rem;}
+.rteam{font-family:'Syne',sans-serif;font-weight:800;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.2em;color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:0.4rem;margin:2rem 0 1rem;}
+.rperson{margin-bottom:2rem;padding:1.25rem;background:var(--surface2);border-radius:10px;}
+.rperson.adm{border-left:3px solid var(--adm);}
+.rperson.biz{border-left:3px solid var(--biz);}
+.rpname{font-family:'Syne',sans-serif;font-weight:700;font-size:0.92rem;margin-bottom:0.8rem;}
+.rfiliere{font-family:'Syne',sans-serif;font-weight:600;font-size:0.75rem;margin:0.8rem 0 0.35rem;padding-top:0.6rem;border-top:1px solid var(--border);}
+.rfiliere.adm{color:var(--adm);}
+.rfiliere.biz{color:var(--biz);}
+.rfiliere:first-of-type{border-top:none;margin-top:0;}
+.rkpis{display:flex;gap:1.2rem;flex-wrap:wrap;margin-bottom:0.5rem;font-size:0.71rem;}
+.rkpi{color:var(--muted);}
+.rkpi strong{color:var(--text);}
+.rslbl{font-size:0.58rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);margin-bottom:0.3rem;margin-top:0.65rem;}
+.rtext{font-size:0.73rem;line-height:1.55;white-space:pre-wrap;}
+.rpipe{font-size:0.72rem;padding:0.18rem 0;} 
+.badge{font-size:0.58rem;padding:0.1rem 0.4rem;border-radius:3px;margin-left:0.3rem;display:inline-block;}
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;z-index:500;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.6rem 1rem;font-size:0.7rem;color:var(--muted);display:none;box-shadow:0 4px 20px rgba(0,0,0,0.4);}
+.toast.show{display:block;}
+.toast.ok{color:var(--done);border-color:var(--done);}
+.toast.err{color:var(--missed);border-color:var(--missed);}
+@media print{
+  body,.rpanel{background:white;color:black;}
+  header,.sync-bar,.team-switcher,.container{display:none;}
+  .rpanel{display:block;position:static;}
+  .rinner{border:none;margin:0;padding:1rem;background:white;}
+  .rclose,.btn{display:none;}
+  *{color:black!important;background:white!important;border-color:#ccc!important;}
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="logo-name">YNOV TOULOUSE</div>
+    <div class="logo-sub">Suivi Activité Equipes · Direction Campus</div>
+  </div>
+  <div class="week-display">
+    <strong id="wRange">—</strong>
+    <span id="wKey">—</span>
+  </div>
+</header>
+<div class="sync-bar">
+  <div class="sync-dot" id="sDot"></div>
+  <span id="sLabel">Connexion...</span>
+  <span style="margin-left:auto"></span>
+  <button class="btn sm" onclick="forceSave()">💾 Sauvegarder</button>
+  <button class="btn sm" onclick="forceLoad()" style="margin-left:0.4rem">🔄 Actualiser</button>
+</div>
+<div class="team-switcher">
+  <button class="team-tab adm active" onclick="switchTeam('adm',this)">🎓 Admissions</button>
+  <button class="team-tab biz" onclick="switchTeam('biz',this)">🤝 CRE — Relations Entreprises</button>
+</div>
+<div class="container">
+  <div class="top-actions">
+    <div class="top-left">
+      <div class="week-nav">
+        <button onclick="changeWeek(-1)">◀</button>
+        <span id="wNavLabel">—</span>
+        <button onclick="changeWeek(1)">▶</button>
+      </div>
+      <div class="add-person-row">
+        <input type="text" id="newName" placeholder="Prenom Nom du membre..."/>
+        <button class="btn primary" onclick="addPerson()">+ Ajouter membre</button>
+      </div>
+    </div>
+    <button class="btn" onclick="openReport()">📄 Rapport direction</button>
+  </div>
+  <div class="persons-grid" id="grid"></div>
+  <div class="empty-state" id="empty">
+    <div style="font-size:2rem;opacity:0.3;margin-bottom:0.5rem">◎</div>
+    Aucun membre. Ajoutez un membre ci-dessus.
+  </div>
+</div>
+
+<!-- MODAL KPI ADM -->
+<div class="overlay" id="mKpiAdm">
+  <div class="modal">
+    <h3>KPIs Admissions — <span id="mKpiAdmTitle"></span></h3>
+    <label>Appels passes</label><input type="number" id="ka_calls" min="0" placeholder="0"/>
+    <label>Dossiers de candidature</label><input type="number" id="ka_dossiers" min="0" placeholder="0"/>
+    <label>RDV effectues (semaine passee)</label><input type="number" id="ka_rdv_done" min="0" placeholder="0"/>
+    <label>No-shows (semaine passee)</label><input type="number" id="ka_noshow" min="0" placeholder="0"/>
+    <label>RDV planifies (cette semaine)</label><input type="number" id="ka_rdv_planned" min="0" placeholder="0"/>
+    <div class="mfooter">
+      <button class="btn" onclick="closeOverlay('mKpiAdm')">Annuler</button>
+      <button class="btn primary" onclick="saveKpiAdm()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL KPI CRE -->
+<div class="overlay" id="mKpiCre">
+  <div class="modal">
+    <h3>KPIs CRE — <span id="mKpiCreTitle"></span></h3>
+    <div class="modal-sep" style="margin-top:0;padding-top:0;border-top:none;color:var(--muted)">KPIs globaux (toutes filieres)</div>
+    <label>Offres actives sur Ymatch (stock total)</label><input type="number" id="kc_offres_actives" min="0" placeholder="0"/>
+    <label>Candidats actifs (matchables)</label><input type="number" id="kc_candidats_actifs" min="0" placeholder="0"/>
+    <div class="modal-sep">KPIs par filiere — <span id="mKpiCreFiliere" style="color:var(--biz)"></span></div>
+    <label>Offres publiees cette semaine (Ymatch)</label><input type="number" id="kc_offres_ymatch" min="0" placeholder="0"/>
+    <label>Offres poussees aux etudiants</label><input type="number" id="kc_offres_pushed" min="0" placeholder="0"/>
+    <label>CV approuves</label><input type="number" id="kc_cv_approved" min="0" placeholder="0"/>
+    <label>BIP realises</label><input type="number" id="kc_bip" min="0" placeholder="0"/>
+    <label>Alternances signees</label><input type="number" id="kc_alternances" min="0" placeholder="0"/>
+    <div class="mfooter">
+      <button class="btn" onclick="closeOverlay('mKpiCre')">Annuler</button>
+      <button class="btn primary" onclick="saveKpiCre()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TEXT ACTION -->
+<div class="overlay" id="mText">
+  <div class="modal">
+    <h3 id="mTextTitle">—</h3>
+    <label id="mTextLabel">—</label>
+    <textarea id="mTextContent" rows="5"></textarea>
+    <div class="mfooter">
+      <button class="btn" onclick="closeOverlay('mText')">Annuler</button>
+      <button class="btn primary" onclick="saveTextAction()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PIPELINE -->
+<div class="overlay" id="mPipe">
+  <div class="modal">
+    <h3>Entreprise — <span id="mPipeName"></span></h3>
+    <label>Nom de l entreprise</label><input type="text" id="mp_company" placeholder="Ex : Airbus, Capgemini..."/>
+    <label>Secteur / Domaine</label><input type="text" id="mp_sector" placeholder="Ex : Tech, Aero, Marketing..."/>
+    <label>Statut</label>
+    <select id="mp_status">
+      <option value="prospect">Prospect (identifiee)</option>
+      <option value="contact">Premier contact</option>
+      <option value="rdv">RDV planifie / realise</option>
+      <option value="negocia">En negociation</option>
+      <option value="signe">Convention signee</option>
+      <option value="perdu">Perdu / Sans suite</option>
+    </select>
+    <label>Levier / Partenaire</label><input type="text" id="mp_lever" placeholder="Ex : LinkedIn, reseau, evenement..."/>
+    <label>Etudiant(s) place(s) en alternance</label><input type="text" id="mp_students" placeholder="Ex : Thomas D., Lea M."/>
+    <label>Notes / Prochaine action</label><textarea id="mp_notes" rows="3" placeholder="Ex : RDV le 28 mai..."></textarea>
+    <div class="mfooter">
+      <button class="btn" onclick="closeOverlay('mPipe')">Annuler</button>
+      <button class="btn primary" onclick="savePipe()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- REPORT -->
+<div class="rpanel" id="rPanel">
+  <div class="rinner">
+    <button class="rclose" onclick="closeReport()">Fermer</button>
+    <div class="rtitle">Rapport d Activite</div>
+    <div class="rmeta" id="rMeta"></div>
+    <div id="rContent"></div>
+    <div style="text-align:right;margin-top:2rem">
+      <button class="btn" onclick="window.print()">Imprimer / PDF</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var BIN = '6a107ed1ee5a733b1201a406';
+var AKEY = '$2a$10$9Lewl62lKT/GCmehoGNCCOConmqOmpMoNTe/wjNUaEMWnzWcPdMEq';
+var AURL = 'https://api.jsonbin.io/v3/b/' + BIN;
+
+var S = { team: 'adm', wOff: 0, persons: {} };
+var saveTimer = null;
+var _eid = null, _efi = null, _epi = null, _etk = null;
+
+function ss(st, msg) {
+  document.getElementById('sDot').className = 'sync-dot ' + st;
+  document.getElementById('sLabel').textContent = msg;
+}
+function toast(msg, t) {
+  var el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'toast show ' + t;
+  setTimeout(function() { el.className = 'toast'; }, 2800);
+}
+function schema() {
+  Object.values(S.persons).forEach(function(p) {
+    if (!p.fil) p.fil = [];
+    if (!p.aFil) p.aFil = null;
+    if (!p.fData) p.fData = {};
+    if (!p.aa) p.aa = { rel: '', nos: '', anImg: '', anName: '', anNote: '', rei: '' };
+    if (!p.cd) p.cd = { strat: '', lev: '', autre: '', nego: '' };
+    if (!p.kpis) p.kpis = {};
+    if (!p.pipe) p.pipe = [];
+    p.fil.forEach(function(f) { if (!p.fData[f]) p.fData[f] = { k: {} }; });
+  });
+}
+async function loadFromCloud() {
+  ss('loading', 'Chargement...');
+  try {
+    var res = await fetch(AURL + '/latest', { headers: { 'X-Access-Key': AKEY } });
+    if (!res.ok) throw new Error(res.status);
+    var data = await res.json();
+    S.persons = data.record && data.record.persons ? data.record.persons : {};
+    schema();
+    ss('ok', 'Synchronise ' + new Date().toLocaleTimeString('fr-FR'));
+  } catch(e) {
+    ss('err', 'Erreur reseau - donnees locales');
+    try { var r = localStorage.getItem('yn_bk'); if (r) { S.persons = JSON.parse(r); schema(); } } catch(_) {}
+  }
+  render();
+}
+async function saveToCloud() {
+  ss('loading', 'Sauvegarde...');
+  try { localStorage.setItem('yn_bk', JSON.stringify(S.persons)); } catch(_) {}
+  try {
+    var res = await fetch(AURL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Access-Key': AKEY },
+      body: JSON.stringify({ persons: S.persons })
+    });
+    if (!res.ok) throw new Error(res.status);
+    ss('ok', 'Sauvegarde ' + new Date().toLocaleTimeString('fr-FR'));
+    toast('Sauvegarde pour toute l equipe', 'ok');
+  } catch(e) {
+    ss('err', 'Erreur - local uniquement');
+    toast('Sauvegarde locale uniquement', 'err');
+  }
+}
+function save() { schema(); clearTimeout(saveTimer); saveTimer = setTimeout(saveToCloud, 1500); }
+function forceSave() { clearTimeout(saveTimer); saveToCloud(); }
+function forceLoad() { loadFromCloud(); }
+
+function getMon(o) {
+  var d = new Date(); var day = d.getDay() || 7;
+  d.setDate(d.getDate() - day + 1 + o * 7); d.setHours(0,0,0,0); return d;
+}
+function getWKey(o) {
+  var m = getMon(o); var y = m.getFullYear();
+  var j = new Date(y,0,1);
+  var w = Math.ceil(((m-j)/86400000 + j.getDay() + 1) / 7);
+  return y + '-W' + String(w).padStart(2,'0');
+}
+function getWLbl(o) {
+  var m = getMon(o); var f = new Date(m); f.setDate(f.getDate()+4);
+  var fmt = function(d) { return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}); };
+  return fmt(m) + ' - ' + fmt(f);
+}
+function changeWeek(d) { S.wOff += d; updateWUI(); render(); }
+function updateWUI() {
+  var l = getWLbl(S.wOff), k = getWKey(S.wOff);
+  document.getElementById('wNavLabel').textContent = l;
+  document.getElementById('wRange').textContent = l;
+  document.getElementById('wKey').textContent = k;
+}
+
+function addPerson() {
+  var name = document.getElementById('newName').value.trim();
+  if (!name) return;
+  var id = 'p' + Date.now();
+  S.persons[id] = { id: id, name: name, team: S.team, fil: [], aFil: null, fData: {}, kpis: {}, aa: { rel:'', nos:'', anImg:'', anName:'', anNote:'', rei:'' }, cd: { strat:'', lev:'', autre:'', nego:'' }, pipe: [] };
+  document.getElementById('newName').value = '';
+  save(); render();
+}
+function delPerson(id) {
+  if (!confirm('Supprimer ce membre ?')) return;
+  delete S.persons[id]; save(); render();
+}
+function addFil(pid) {
+  var input = document.getElementById('fi_' + pid);
+  var name = input.value.trim(); if (!name) return;
+  var p = S.persons[pid];
+  if (p.fil.indexOf(name) >= 0) return;
+  p.fil.push(name);
+  if (!p.fData[name]) p.fData[name] = { k: {} };
+  if (!p.aFil) p.aFil = name;
+  input.value = '';
+  save(); render();
+}
+function delFil(pid, name) {
+  var p = S.persons[pid];
+  p.fil = p.fil.filter(function(f) { return f !== name; });
+  delete p.fData[name];
+  if (p.aFil === name) p.aFil = p.fil[0] || null;
+  save(); render();
+}
+function switchFil(pid, name) { S.persons[pid].aFil = name; render(); }
+
+function openKpiAdm(pid, fil) {
+  _eid = pid; _efi = fil;
+  var p = S.persons[pid];
+  document.getElementById('mKpiAdmTitle').textContent = p.name + ' - ' + fil;
+  var k = p.fData[fil] ? p.fData[fil].k : {};
+  ['calls','dossiers','rdv_done','noshow','rdv_planned'].forEach(function(key) {
+    document.getElementById('ka_' + key).value = k[key] != null ? k[key] : '';
+  });
+  openOv('mKpiAdm');
+}
+function saveKpiAdm() {
+  var p = S.persons[_eid];
+  if (!p.fData[_efi]) p.fData[_efi] = { k: {} };
+  var k = p.fData[_efi].k;
+  ['calls','dossiers','rdv_done','noshow','rdv_planned'].forEach(function(key) {
+    var v = document.getElementById('ka_' + key).value;
+    k[key] = v !== '' ? parseInt(v) : null;
+  });
+  save(); closeOverlay('mKpiAdm'); render();
+}
+
+function openKpiCre(pid, fil) {
+  _eid = pid; _efi = fil;
+  var p = S.persons[pid];
+  document.getElementById('mKpiCreTitle').textContent = p.name;
+  document.getElementById('mKpiCreFiliere').textContent = fil || 'aucune filiere selectionnee';
+  document.getElementById('kc_offres_actives').value = p.kpis.offres_actives != null ? p.kpis.offres_actives : '';
+  document.getElementById('kc_candidats_actifs').value = p.kpis.candidats_actifs != null ? p.kpis.candidats_actifs : '';
+  var kf = fil && p.fData[fil] ? p.fData[fil].k : {};
+  ['offres_ymatch','offres_pushed','cv_approved','bip','alternances'].forEach(function(key) {
+    document.getElementById('kc_' + key).value = kf[key] != null ? kf[key] : '';
+  });
+  openOv('mKpiCre');
+}
+function saveKpiCre() {
+  var p = S.persons[_eid];
+  ['offres_actives','candidats_actifs'].forEach(function(key) {
+    var v = document.getElementById('kc_' + key).value;
+    p.kpis[key] = v !== '' ? parseInt(v) : null;
+  });
+  if (_efi) {
+    if (!p.fData[_efi]) p.fData[_efi] = { k: {} };
+    var kf = p.fData[_efi].k;
+    ['offres_ymatch','offres_pushed','cv_approved','bip','alternances'].forEach(function(key) {
+      var v = document.getElementById('kc_' + key).value;
+      kf[key] = v !== '' ? parseInt(v) : null;
+    });
+  }
+  save(); closeOverlay('mKpiCre'); render();
+}
+
+var TA_CFG = {
+  rel: { title: 'Relances Salesforce', label: 'Quels rapports SF utilises ? Qui relance ? Resultats ?', ph: 'Ex : Rapport Candidats en attente - 34 relances. 8 RDV pris...' },
+  nos: { title: 'Relances No-Shows', label: 'Qui a no-showe ? Comment relance ? Resultats ?', ph: 'Ex : 4 no-shows. Relance SMS+email dans les 2h. 2 ont repris RDV...' },
+  rei: { title: 'Reinscriptions', label: 'Ou en sont les reinscriptions ? Actions effectuees ?', ph: 'Ex : 12 dossiers recus. 8 valides. 3 en attente de pieces...' }
+};
+function openTA(pid, key) {
+  _eid = pid; _etk = key;
+  var cfg = TA_CFG[key]; var p = S.persons[pid];
+  document.getElementById('mTextTitle').textContent = cfg.title + ' - ' + p.name;
+  document.getElementById('mTextLabel').textContent = cfg.label;
+  var ta = document.getElementById('mTextContent');
+  ta.placeholder = cfg.ph; ta.value = p.aa[key] || '';
+  openOv('mText');
+}
+function saveTextAction() {
+  S.persons[_eid].aa[_etk] = document.getElementById('mTextContent').value.trim();
+  save(); closeOverlay('mText'); render();
+}
+
+function trigUp(pid) { document.getElementById('fu_' + pid).click(); }
+function handleImg(pid, input) {
+  var file = input.files[0]; if (!file) return;
+  var r = new FileReader();
+  r.onload = function(e) { S.persons[pid].aa.anImg = e.target.result; S.persons[pid].aa.anName = file.name; save(); render(); };
+  r.readAsDataURL(file);
+}
+function saveAnNote(pid, val) { S.persons[pid].aa.anNote = val; save(); }
+
+var PSL = { prospect:'Prospect', contact:'Contact', rdv:'RDV', negocia:'Negociation', signe:'Signe', perdu:'Perdu' };
+var PSC = { prospect:'ps-prospect', contact:'ps-contact', rdv:'ps-rdv', negocia:'ps-negocia', signe:'ps-signe', perdu:'ps-perdu' };
+
+function openPipe(pid, idx) {
+  _eid = pid; _epi = idx != null ? idx : null;
+  var p = S.persons[pid];
+  if (idx != null) {
+    var item = p.pipe[idx];
+    document.getElementById('mPipeName').textContent = item.company;
+    document.getElementById('mp_company').value = item.company || '';
+    document.getElementById('mp_sector').value = item.sector || '';
+    document.getElementById('mp_status').value = item.status || 'prospect';
+    document.getElementById('mp_lever').value = item.lever || '';
+    document.getElementById('mp_students').value = item.students || '';
+    document.getElementById('mp_notes').value = item.notes || '';
+  } else {
+    document.getElementById('mPipeName').textContent = 'Nouvelle entreprise';
+    ['mp_company','mp_sector','mp_lever','mp_students','mp_notes'].forEach(function(f) { document.getElementById(f).value = ''; });
+    document.getElementById('mp_status').value = 'prospect';
+  }
+  openOv('mPipe');
+}
+function savePipe() {
+  var item = {
+    company: document.getElementById('mp_company').value.trim(),
+    sector: document.getElementById('mp_sector').value.trim(),
+    status: document.getElementById('mp_status').value,
+    lever: document.getElementById('mp_lever').value.trim(),
+    students: document.getElementById('mp_students').value.trim(),
+    notes: document.getElementById('mp_notes').value.trim()
+  };
+  if (!item.company) return;
+  var p = S.persons[_eid];
+  if (_epi != null) p.pipe[_epi] = item; else p.pipe.push(item);
+  save(); closeOverlay('mPipe'); render();
+}
+function delPipe(pid, idx) { S.persons[pid].pipe.splice(idx, 1); save(); render(); }
+function cyclePipe(pid, idx) {
+  var cycle = ['prospect','contact','rdv','negocia','signe','perdu'];
+  var item = S.persons[pid].pipe[idx];
+  item.status = cycle[(cycle.indexOf(item.status) + 1) % cycle.length];
+  save(); render();
+}
+function saveCd(pid, key, val) { S.persons[pid].cd[key] = val; save(); }
+
+function e(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+
+function mkFiliereBar(p, team) {
+  var ac = team === "adm" ? "active-adm" : "active-biz";
+  var tabs = p.fil.map(function(f) {
+    var cls = p.aFil === f ? ac : "";
+    return "<button class=\"ftab " + cls + "\" data-pid=\"" + p.id + "\" data-f=\"" + e(f) + "\" data-action=\"swf\">"
+      + e(f)
+      + "<span data-pid=\"" + p.id + "\" data-f=\"" + e(f) + "\" data-action=\"delf\" style=\"margin-left:0.3rem;opacity:0.5;font-size:0.58rem\"> x</span></button>";
+  }).join("");
+  return "<div class=\"filiere-bar\">" + tabs
+    + "<div class=\"fadd\"><input id=\"fi_" + p.id + "\" placeholder=\"+ Filiere\" data-pid=\"" + p.id + "\" data-action=\"addf\"/>"
+    + "<button class=\"btn sm\" data-pid=\"" + p.id + "\" data-action=\"addf\">+</button></div></div>";
+}
+
+function mkKpiAdm(p) {
+  if (!p.aFil) return "<div class=\"no-filiere\">Ajoutez une filiere pour saisir les KPIs</div>";
+  var k = p.fData[p.aFil] ? p.fData[p.aFil].k : {};
+  var cells = [["calls","Appels",k.calls],["dossiers","Dossiers",k.dossiers],["rdv_done","RDV S-1",k.rdv_done],["noshow","No-shows",k.noshow],["rdv_planned","RDV planifies",k.rdv_planned]];
+  return "<div class=\"kpi-band\" style=\"grid-template-columns:repeat(5,1fr)\">"
+    + cells.map(function(c) { return "<div class=\"kpi-cell\"><div class=\"kpi-label\">" + c[1] + "</div><div class=\"kpi-value adm\">" + (c[2] != null ? c[2] : "—") + "</div></div>"; }).join("")
+    + "</div>";
+}
+
+function mkKpiCre(p) {
+  var k = p.kpis;
+  var g = "<div class=\"kpi-band\" style=\"grid-template-columns:repeat(2,1fr)\">"
+    + "<div class=\"kpi-cell\"><div class=\"kpi-label\">Offres actives (total)</div><div class=\"kpi-value biz\">" + (k.offres_actives != null ? k.offres_actives : "—") + "</div></div>"
+    + "<div class=\"kpi-cell\"><div class=\"kpi-label\">Candidats actifs</div><div class=\"kpi-value biz\">" + (k.candidats_actifs != null ? k.candidats_actifs : "—") + "</div></div>"
+    + "</div>";
+  if (!p.aFil) return g + "<div class=\"no-filiere\">Ajoutez une filiere pour les KPIs par filiere</div>";
+  var kf = p.fData[p.aFil] ? p.fData[p.aFil].k : {};
+  var row = "<div class=\"kpi-band\" style=\"grid-template-columns:repeat(5,1fr)\">"
+    + [["offres_ymatch","Offres Ymatch",kf.offres_ymatch],["offres_pushed","Offres poussees",kf.offres_pushed],["cv_approved","CV approuves",kf.cv_approved],["bip","BIP realises",kf.bip],["alternances","Alternances signees",kf.alternances]]
+      .map(function(c) { return "<div class=\"kpi-cell\"><div class=\"kpi-label\">" + c[1] + "</div><div class=\"kpi-value biz\">" + (c[2] != null ? c[2] : "—") + "</div></div>"; }).join("")
+    + "</div>";
+  return g + row;
+}
+
+function renderAdmCard(p) {
+  var aa = p.aa;
+  var kpiBtn = p.aFil ? "<button class=\"btn sm\" data-pid=\"" + p.id + "\" data-fil=\"" + e(p.aFil) + "\" data-action=\"kpiadm\">KPIs</button>" : "";
+  var tbk = function(key, lbl, icon) {
+    var content = aa[key];
+    return "<div class=\"taction\"><div class=\"ta-lbl\">" + icon + " " + lbl + "</div>"
+      + (content ? "<div class=\"ta-content\">" + e(content) + "</div>" : "<div class=\"ta-empty\">Non renseigne</div>")
+      + "<button class=\"btn sm\" style=\"margin-top:0.4rem\" data-pid=\"" + p.id + "\" data-key=\"" + key + "\" data-action=\"ta\">" + (content ? "Modifier" : "Renseigner") + "</button></div>";
+  };
+  var shot = "<div class=\"shot-block\"><div class=\"ta-lbl\">Anomalies Salesforce — S-1 vs Maintenant</div>"
+    + "<div style=\"display:flex;gap:1rem;margin-top:0.5rem;flex-wrap:wrap\">"
+    + "<div class=\"shot-slot\"><div style=\"font-size:0.55rem;color:var(--muted);text-transform:uppercase;margin-bottom:0.3rem\">Situation S-1</div>"
+    + (aa.anImg ? "<img src=\"" + aa.anImg + "\"/><div style=\"font-size:0.58rem;color:var(--muted)\">" + e(aa.anName) + "</div>" : "<div class=\"shot-empty\">Pas de screenshot</div>")
+    + "<input type=\"file\" accept=\"image/*\" id=\"fu_" + p.id + "\" data-pid=\"" + p.id + "\" data-action=\"imgup\" style=\"display:none\"/>"
+    + "<button class=\"btn sm\" data-pid=\"" + p.id + "\" data-action=\"trigup\" style=\"margin-top:0.4rem\">" + (aa.anImg ? "Remplacer" : "Ajouter screenshot") + "</button>"
+    + "</div></div>"
+    + "<div style=\"margin-top:0.5rem\"><div class=\"ta-lbl\" style=\"margin-bottom:0.3rem\">Note evolution</div>"
+    + "<textarea class=\"strat\" style=\"min-height:44px\" data-pid=\"" + p.id + "\" data-action=\"annote\" placeholder=\"Decris l anomalie constatee...\">" + e(aa.anNote) + "</textarea>"
+    + "</div></div>";
+  return "<div class=\"person-card adm\">"
+    + "<div class=\"card-head\"><div class=\"card-name\">" + e(p.name) + "</div><div class=\"card-btns\">" + kpiBtn + "<button class=\"btn sm danger\" data-pid=\"" + p.id + "\" data-action=\"delperson\">x</button></div></div>"
+    + mkFiliereBar(p, "adm")
+    + mkKpiAdm(p)
+    + "<div class=\"card-section\"><div class=\"section-title\">Actions & Reporting</div>"
+    + tbk("rel","Relances Salesforce","🔁")
+    + tbk("nos","Relances No-Shows","📵")
+    + shot
+    + tbk("rei","Reinscriptions","🔄")
+    + "</div></div>";
+}
+
+function renderCreCard(p) {
+  var cd = p.cd; var pl = p.pipe || [];
+  var kpiBtn = "<button class=\"btn sm\" data-pid=\"" + p.id + "\" data-fil=\"" + e(p.aFil || "") + "\" data-action=\"kpicre\">KPIs</button>";
+  var pipeHtml = pl.length ? pl.map(function(item, i) {
+    return "<div class=\"pipe-item\">"
+      + "<div class=\"pi-main\"><div style=\"font-weight:500\">" + e(item.company) + "</div>"
+      + (item.sector ? "<div style=\"font-size:0.6rem;color:var(--muted)\">" + e(item.sector) + "</div>" : "")
+      + (item.students ? "<div style=\"font-size:0.6rem;color:var(--done)\">🎓 " + e(item.students) + "</div>" : "")
+      + (item.notes ? "<div style=\"font-size:0.6rem;color:var(--muted)\">" + e(item.notes.substring(0,80)) + (item.notes.length>80?"...":"") + "</div>" : "")
+      + "</div>"
+      + (item.lever ? "<div style=\"font-size:0.62rem;color:var(--muted);max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap\">⚡ " + e(item.lever) + "</div>" : "")
+      + "<button class=\"pi-badge " + PSC[item.status] + "\" data-pid=\"" + p.id + "\" data-idx=\"" + i + "\" data-action=\"cyclepipe\">" + PSL[item.status] + "</button>"
+      + "<button class=\"pi-btn\" data-pid=\"" + p.id + "\" data-idx=\"" + i + "\" data-action=\"editpipe\">✎</button>"
+      + "<button class=\"pi-btn\" data-pid=\"" + p.id + "\" data-idx=\"" + i + "\" data-action=\"delpipe\">✕</button>"
+      + "</div>";
+  }).join("") : "<div style=\"font-size:0.7rem;color:var(--muted);padding:0.3rem 0\">Aucune entreprise dans le pipeline.</div>";
+
+  return "<div class=\"person-card biz\">"
+    + "<div class=\"card-head\"><div class=\"card-name\">" + e(p.name) + "</div><div class=\"card-btns\">" + kpiBtn + "<button class=\"btn sm danger\" data-pid=\"" + p.id + "\" data-action=\"delperson\">x</button></div></div>"
+    + mkFiliereBar(p, "biz")
+    + mkKpiCre(p)
+    + "<div class=\"card-section\"><div class=\"section-title\">Pipeline Entreprises <span><button class=\"btn sm\" data-pid=\"" + p.id + "\" data-action=\"addpipe\">+ Ajouter</button></span></div>" + pipeHtml + "</div>"
+    + "<div class=\"card-section\"><div class=\"section-title\">🔄 Negociations en cours</div><textarea class=\"strat\" data-pid=\"" + p.id + "\" data-key=\"nego\" data-action=\"cdtext\" placeholder=\"Ex : Capgemini — contrat en relecture RH...\">" + e(cd.nego||"") + "</textarea></div>"
+    + "<div class=\"card-section\"><div class=\"section-title\">🎯 Strategie BD</div><textarea class=\"strat\" data-pid=\"" + p.id + "\" data-key=\"strat\" data-action=\"cdtext\" placeholder=\"Cibles, approche, timing, canaux...\">" + e(cd.strat||"") + "</textarea></div>"
+    + "<div class=\"card-section\"><div class=\"section-title\">⚡ Leviers & Partenaires</div><textarea class=\"strat\" data-pid=\"" + p.id + "\" data-key=\"lev\" data-action=\"cdtext\" placeholder=\"Ex : LinkedIn, jobdating campus, reseau alumni...\">" + e(cd.lev||"") + "</textarea></div>"
+    + "<div class=\"card-section\"><div class=\"section-title\">💬 Autre</div><textarea class=\"strat\" data-pid=\"" + p.id + "\" data-key=\"autre\" data-action=\"cdtext\" placeholder=\"Un blocage, une info, une idee...\">" + e(cd.autre||"") + "</textarea></div>"
+    + "</div>";
+}
+
+function render() {
+  var grid = document.getElementById('grid');
+  var empty = document.getElementById('empty');
+  var persons = Object.values(S.persons).filter(function(p) { return p.team === S.team; });
+  if (!persons.length) { grid.innerHTML = ''; empty.classList.add('show'); return; }
+  empty.classList.remove('show');
+  grid.innerHTML = persons.map(function(p) { return p.team === 'adm' ? renderAdmCard(p) : renderCreCard(p); }).join('');
+}
+
+function openReport() {
+  document.getElementById('rMeta').textContent = 'YNOV Campus Toulouse - ' + getWKey(S.wOff) + ' (' + getWLbl(S.wOff) + ') - ' + new Date().toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  var html = '';
+  var adms = Object.values(S.persons).filter(function(p) { return p.team === 'adm'; });
+  if (adms.length) {
+    html += '<div class="rteam">Charges d Admissions</div>';
+    adms.forEach(function(p) {
+      var aa = p.aa;
+      html += '<div class="rperson adm"><div class="rpname">' + e(p.name) + '</div>';
+      if (p.fil.length) {
+        p.fil.forEach(function(f) {
+          var k = p.fData[f] ? p.fData[f].k : {};
+          html += '<div class="rfiliere adm">📚 ' + e(f) + '</div>'
+            + '<div class="rkpis">'
+            + '<span class="rkpi"><strong>' + (k.calls!=null?k.calls:'—') + '</strong> appels</span>'
+            + '<span class="rkpi"><strong>' + (k.dossiers!=null?k.dossiers:'—') + '</strong> dossiers</span>'
+            + '<span class="rkpi"><strong>' + (k.rdv_done!=null?k.rdv_done:'—') + '</strong> RDV effectues</span>'
+            + '<span class="rkpi"><strong>' + (k.noshow!=null?k.noshow:'—') + '</strong> no-shows</span>'
+            + '<span class="rkpi"><strong>' + (k.rdv_planned!=null?k.rdv_planned:'—') + '</strong> RDV planifies</span>'
+            + '</div>';
+        });
+      }
+      if (aa.rel) html += '<div class="rslbl">Relances SF</div><div class="rtext">' + e(aa.rel) + '</div>';
+      if (aa.nos) html += '<div class="rslbl">No-Shows</div><div class="rtext">' + e(aa.nos) + '</div>';
+      if (aa.anNote || aa.anImg) html += '<div class="rslbl">Anomalies SF</div><div class="rtext">' + (aa.anImg?'[Screenshot joint] ':'') + e(aa.anNote||'') + '</div>';
+      if (aa.rei) html += '<div class="rslbl">Reinscriptions</div><div class="rtext">' + e(aa.rei) + '</div>';
+      html += '</div>';
+    });
+  }
+  var cres = Object.values(S.persons).filter(function(p) { return p.team === 'biz'; });
+  if (cres.length) {
+    html += '<div class="rteam">Charges de Relations Entreprises</div>';
+    cres.forEach(function(p) {
+      var k = p.kpis; var cd = p.cd||{}; var pl = p.pipe||[];
+      var signed = pl.filter(function(i){return i.status==='signe';}).length;
+      var active = pl.filter(function(i){return ['contact','rdv','negocia'].indexOf(i.status)>=0;}).length;
+      html += '<div class="rperson biz"><div class="rpname">' + e(p.name) + '</div>'
+        + '<div class="rkpis">'
+        + '<span class="rkpi"><strong>' + (k.offres_actives!=null?k.offres_actives:'—') + '</strong> offres actives</span>'
+        + '<span class="rkpi"><strong>' + (k.candidats_actifs!=null?k.candidats_actifs:'—') + '</strong> candidats actifs</span>'
+        + '</div>';
+      if (p.fil.length) {
+        p.fil.forEach(function(f) {
+          var kf = p.fData[f] ? p.fData[f].k : {};
+          html += '<div class="rfiliere biz">📚 ' + e(f) + '</div>'
+            + '<div class="rkpis">'
+            + '<span class="rkpi"><strong>' + (kf.offres_ymatch!=null?kf.offres_ymatch:'—') + '</strong> offres Ymatch</span>'
+            + '<span class="rkpi"><strong>' + (kf.offres_pushed!=null?kf.offres_pushed:'—') + '</strong> poussees</span>'
+            + '<span class="rkpi"><strong>' + (kf.cv_approved!=null?kf.cv_approved:'—') + '</strong> CV approuves</span>'
+            + '<span class="rkpi"><strong>' + (kf.bip!=null?kf.bip:'—') + '</strong> BIP</span>'
+            + '<span class="rkpi"><strong>' + (kf.alternances!=null?kf.alternances:'—') + '</strong> alternances</span>'
+            + '</div>';
+        });
+      }
+      if (pl.length) {
+        html += '<div class="rslbl">Pipeline (' + pl.length + ' entreprises - ' + signed + ' signees - ' + active + ' en cours)</div>';
+        pl.forEach(function(item) {
+          html += '<div class="rpipe"><strong>' + e(item.company) + '</strong>'
+            + (item.sector?' - <span style="opacity:0.6">'+e(item.sector)+'</span>':'')
+            + '<span class="badge ' + PSC[item.status] + '">' + PSL[item.status] + '</span>'
+            + (item.lever?' <span style="font-size:0.62rem;opacity:0.6">⚡'+e(item.lever)+'</span>':'')
+            + (item.students?' <span style="font-size:0.62rem;color:var(--done)">🎓'+e(item.students)+'</span>':'')
+            + (item.notes?'<div style="font-size:0.65rem;opacity:0.6;margin-left:0.5rem">'+e(item.notes)+'</div>':'')
+            + '</div>';
+        });
+      }
+      if (cd.nego) html += '<div class="rslbl">Negociations en cours</div><div class="rtext">' + e(cd.nego) + '</div>';
+      if (cd.strat) html += '<div class="rslbl">Strategie BD</div><div class="rtext">' + e(cd.strat) + '</div>';
+      if (cd.lev) html += '<div class="rslbl">Leviers & Partenaires</div><div class="rtext">' + e(cd.lev) + '</div>';
+      if (cd.autre) html += '<div class="rslbl">Autre</div><div class="rtext">' + e(cd.autre) + '</div>';
+      html += '</div>';
+    });
+  }
+  document.getElementById('rContent').innerHTML = html || '<p style="color:var(--muted)">Aucune donnee saisie.</p>';
+  document.getElementById('rPanel').classList.add('open');
+}
+function closeReport() { document.getElementById('rPanel').classList.remove('open'); }
+
+function openOv(id) { document.getElementById(id).classList.add('open'); }
+function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(function(el) {
+  el.addEventListener('click', function(ev) { if (ev.target === el) el.classList.remove('open'); });
+});
+
+function switchTeam(team, el) {
+  S.team = team;
+  document.querySelectorAll('.team-tab').forEach(function(t) { t.classList.remove('active'); });
+  el.classList.add('active');
+  render();
+}
+
+document.addEventListener('click', function(ev) {
+  var t = ev.target;
+  var action = t.getAttribute('data-action');
+  if (!action) return;
+  var pid = t.getAttribute('data-pid');
+  var f = t.getAttribute('data-f');
+  var fil = t.getAttribute('data-fil');
+  var key = t.getAttribute('data-key');
+  var idx = t.getAttribute('data-idx');
+  ev.stopPropagation();
+  if (action === 'swf') { switchFil(pid, f); }
+  else if (action === 'delf') { delFil(pid, f); }
+  else if (action === 'addf') { addFil(pid); }
+  else if (action === 'delperson') { delPerson(pid); }
+  else if (action === 'kpiadm') { openKpiAdm(pid, fil); }
+  else if (action === 'kpicre') { openKpiCre(pid, fil); }
+  else if (action === 'ta') { openTA(pid, key); }
+  else if (action === 'trigup') { document.getElementById('fu_'+pid).click(); }
+  else if (action === 'addpipe') { openPipe(pid, null); }
+  else if (action === 'editpipe') { openPipe(pid, parseInt(idx)); }
+  else if (action === 'delpipe') { delPipe(pid, parseInt(idx)); }
+  else if (action === 'cyclepipe') { cyclePipe(pid, parseInt(idx)); }
+});
+document.addEventListener('keydown', function(ev) {
+  if (ev.key === 'Enter') {
+    var t = ev.target;
+    if (t.getAttribute('data-action') === 'addf') { addFil(t.getAttribute('data-pid')); }
+  }
+});
+document.addEventListener('input', function(ev) {
+  var t = ev.target;
+  var action = t.getAttribute('data-action');
+  var pid = t.getAttribute('data-pid');
+  if (action === 'annote') { saveAnNote(pid, t.value); }
+  else if (action === 'cdtext') { saveCd(pid, t.getAttribute('data-key'), t.value); }
+  else if (action === 'imgup') { handleImg(pid, t); }
+});
+document.addEventListener('change', function(ev) {
+  var t = ev.target;
+  if (t.getAttribute('data-action') === 'imgup') { handleImg(t.getAttribute('data-pid'), t); }
+});
+updateWUI();
+loadFromCloud();
+</script>
+</body>
+</html>
