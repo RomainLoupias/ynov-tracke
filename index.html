@@ -292,7 +292,7 @@ function schema() {
     if (!p.fil) p.fil = [];
     if (!p.aFil) p.aFil = null;
     if (!p.fData) p.fData = {};
-    if (!p.aa) p.aa = { rel: '', nos: '', anImg: '', anName: '', anNote: '', rei: '' };
+    if (!p.aa) p.aa = { bilan: '', plan: '', anImg: '', anName: '' };
     if (!p.cd) p.cd = { strat: '', lev: '', autre: '', nego: '' };
     if (!p.kpis) p.kpis = {};
     if (!p.pipe) p.pipe = [];
@@ -362,7 +362,7 @@ function addPerson() {
   var name = document.getElementById('newName').value.trim();
   if (!name) return;
   var id = 'p' + Date.now();
-  S.persons[id] = { id: id, name: name, team: S.team, fil: [], aFil: null, fData: {}, kpis: {}, aa: { rel:'', nos:'', anImg:'', anName:'', anNote:'', rei:'' }, cd: { strat:'', lev:'', autre:'', nego:'' }, pipe: [] };
+  S.persons[id] = { id: id, name: name, team: S.team, fil: [], aFil: null, fData: {}, kpis: {}, aa: { bilan:'', plan:'', anImg:'', anName:'' }, cd: { strat:'', lev:'', autre:'', nego:'' }, pipe: [] };
   document.getElementById('newName').value = '';
   save(); render();
 }
@@ -441,18 +441,18 @@ function saveKpiCre() {
   save(); closeOverlay('mKpiCre'); render();
 }
 
-var TA_CFG = {
-  rel: { title: 'Relances Salesforce', label: 'Quels rapports SF utilises ? Qui relance ? Resultats ?', ph: 'Ex : Rapport Candidats en attente - 34 relances. 8 RDV pris...' },
-  nos: { title: 'Relances No-Shows', label: 'Qui a no-showe ? Comment relance ? Resultats ?', ph: 'Ex : 4 no-shows. Relance SMS+email dans les 2h. 2 ont repris RDV...' },
-  rei: { title: 'Reinscriptions', label: 'Ou en sont les reinscriptions ? Actions effectuees ?', ph: 'Ex : 12 dossiers recus. 8 valides. 3 en attente de pieces...' }
-};
 function openTA(pid, key) {
   _eid = pid; _etk = key;
-  var cfg = TA_CFG[key]; var p = S.persons[pid];
-  document.getElementById('mTextTitle').textContent = cfg.title + ' - ' + p.name;
-  document.getElementById('mTextLabel').textContent = cfg.label;
+  var p = S.persons[pid];
+  var titles = { bilan: 'Bilan S-1 — ' + p.name, plan: 'Plan d actions S+1 — ' + p.name };
+  var phs = {
+    bilan: '(Relances SF : rapports utilises, qui relance, resultats)\n(No-shows : qui, comment relance, suites)\n(Anomalies SF : evolution constatee vs semaine passee)\n(Reinscriptions : etat des dossiers, actions)\n(Autres points...)',
+    plan: '(Actions prevues cette semaine)\n(Timing : qui fait quoi et quand)\n(Blocages identifies : pourquoi pas fait, comment debloquer)\n(Echeance de resolution)'
+  };
+  document.getElementById('mTextTitle').textContent = titles[key];
+  document.getElementById('mTextLabel').textContent = key === 'bilan' ? 'Analyse libre de la semaine passee' : 'Actions et timing pour la semaine a venir';
   var ta = document.getElementById('mTextContent');
-  ta.placeholder = cfg.ph; ta.value = p.aa[key] || '';
+  ta.placeholder = phs[key]; ta.value = p.aa[key] || '';
   openOv('mText');
 }
 function saveTextAction() {
@@ -467,7 +467,6 @@ function handleImg(pid, input) {
   r.onload = function(e) { S.persons[pid].aa.anImg = e.target.result; S.persons[pid].aa.anName = file.name; save(); render(); };
   r.readAsDataURL(file);
 }
-function saveAnNote(pid, val) { S.persons[pid].aa.anNote = val; save(); }
 
 var PSL = { prospect:'Prospect', contact:'Contact', rdv:'RDV', negocia:'Negociation', signe:'Signe', perdu:'Perdu' };
 var PSC = { prospect:'ps-prospect', contact:'ps-contact', rdv:'ps-rdv', negocia:'ps-negocia', signe:'ps-signe', perdu:'ps-perdu' };
@@ -554,35 +553,41 @@ function mkKpiCre(p) {
   return g + row;
 }
 
+function taBlock(pid, key, aa, icon, title) {
+  var content = aa[key];
+  var phs = {
+    bilan: '(Relances SF : rapports utilises, qui relance, resultats) (No-shows : qui, comment relance, suites) (Anomalies SF : evolution constatee) (Reinscriptions : etat des dossiers) (Autres points...)',
+    plan: '(Actions prevues) (Timing : qui fait quoi et quand) (Blocages : pourquoi pas fait, comment debloquer, echeance)'
+  };
+  return "<div class=\"taction\">"
+    + "<div class=\"ta-lbl\">" + icon + " " + title + "</div>"
+    + (content
+        ? "<div class=\"ta-content\">" + e(content) + "</div>"
+        : "<div class=\"ta-empty\">" + phs[key] + "</div>")
+    + "<button class=\"btn sm\" style=\"margin-top:0.4rem\" data-pid=\"" + pid + "\" data-key=\"" + key + "\" data-action=\"ta\">"
+    + (content ? "✎ Modifier" : "+ Renseigner") + "</button>"
+    + (content && key === 'bilan'
+        ? "<button class=\"btn sm\" style=\"margin-top:0.4rem;margin-left:0.4rem\" data-pid=\"" + pid + "\" data-action=\"trigup\">📸 " + (aa.anImg ? "Screenshot joint" : "Ajouter screenshot SF") + "</button>"
+          + "<input type=\"file\" accept=\"image/*\" id=\"fu_" + pid + "\" data-pid=\"" + pid + "\" data-action=\"imgup\" style=\"display:none\"/>"
+          + (aa.anImg ? "<div style=\"margin-top:0.4rem\"><img src=\"" + aa.anImg + "\" style=\"max-height:80px;border-radius:4px\"/></div>" : "")
+        : "")
+    + "</div>";
+}
+
 function renderAdmCard(p) {
   var aa = p.aa;
-  var kpiBtn = p.aFil ? "<button class=\"btn sm\" data-pid=\"" + p.id + "\" data-fil=\"" + e(p.aFil) + "\" data-action=\"kpiadm\">KPIs</button>" : "";
-  var tbk = function(key, lbl, icon) {
-    var content = aa[key];
-    return "<div class=\"taction\"><div class=\"ta-lbl\">" + icon + " " + lbl + "</div>"
-      + (content ? "<div class=\"ta-content\">" + e(content) + "</div>" : "<div class=\"ta-empty\">Non renseigne</div>")
-      + "<button class=\"btn sm\" style=\"margin-top:0.4rem\" data-pid=\"" + p.id + "\" data-key=\"" + key + "\" data-action=\"ta\">" + (content ? "Modifier" : "Renseigner") + "</button></div>";
-  };
-  var shot = "<div class=\"shot-block\"><div class=\"ta-lbl\">Anomalies Salesforce — S-1 vs Maintenant</div>"
-    + "<div style=\"display:flex;gap:1rem;margin-top:0.5rem;flex-wrap:wrap\">"
-    + "<div class=\"shot-slot\"><div style=\"font-size:0.55rem;color:var(--muted);text-transform:uppercase;margin-bottom:0.3rem\">Situation S-1</div>"
-    + (aa.anImg ? "<img src=\"" + aa.anImg + "\"/><div style=\"font-size:0.58rem;color:var(--muted)\">" + e(aa.anName) + "</div>" : "<div class=\"shot-empty\">Pas de screenshot</div>")
-    + "<input type=\"file\" accept=\"image/*\" id=\"fu_" + p.id + "\" data-pid=\"" + p.id + "\" data-action=\"imgup\" style=\"display:none\"/>"
-    + "<button class=\"btn sm\" data-pid=\"" + p.id + "\" data-action=\"trigup\" style=\"margin-top:0.4rem\">" + (aa.anImg ? "Remplacer" : "Ajouter screenshot") + "</button>"
-    + "</div></div>"
-    + "<div style=\"margin-top:0.5rem\"><div class=\"ta-lbl\" style=\"margin-bottom:0.3rem\">Note evolution</div>"
-    + "<textarea class=\"strat\" style=\"min-height:44px\" data-pid=\"" + p.id + "\" data-action=\"annote\" placeholder=\"Decris l anomalie constatee...\">" + e(aa.anNote) + "</textarea>"
-    + "</div></div>";
+  var kpiBtn = p.aFil ? "<button class=\"btn sm\" data-pid=\"" + p.id + "\" data-fil=\"" + e(p.aFil) + "\" data-action=\"kpiadm\">📊 KPIs</button>" : "";
   return "<div class=\"person-card adm\">"
     + "<div class=\"card-head\"><div class=\"card-name\">" + e(p.name) + "</div><div class=\"card-btns\">" + kpiBtn + "<button class=\"btn sm danger\" data-pid=\"" + p.id + "\" data-action=\"delperson\">x</button></div></div>"
     + mkFiliereBar(p, "adm")
     + mkKpiAdm(p)
-    + "<div class=\"card-section\"><div class=\"section-title\">Actions & Reporting</div>"
-    + tbk("rel","Relances Salesforce","🔁")
-    + tbk("nos","Relances No-Shows","📵")
-    + shot
-    + tbk("rei","Reinscriptions","🔄")
-    + "</div></div>";
+    + "<div class=\"card-section\">"
+    + taBlock(p.id, "bilan", aa, "📋", "Bilan S-1")
+    + "</div>"
+    + "<div class=\"card-section\">"
+    + taBlock(p.id, "plan", aa, "🎯", "Plan d actions S+1")
+    + "</div>"
+    + "</div>";
 }
 
 function renderCreCard(p) {
@@ -645,10 +650,8 @@ function openReport() {
             + '</div>';
         });
       }
-      if (aa.rel) html += '<div class="rslbl">Relances SF</div><div class="rtext">' + e(aa.rel) + '</div>';
-      if (aa.nos) html += '<div class="rslbl">No-Shows</div><div class="rtext">' + e(aa.nos) + '</div>';
-      if (aa.anNote || aa.anImg) html += '<div class="rslbl">Anomalies SF</div><div class="rtext">' + (aa.anImg?'[Screenshot joint] ':'') + e(aa.anNote||'') + '</div>';
-      if (aa.rei) html += '<div class="rslbl">Reinscriptions</div><div class="rtext">' + e(aa.rei) + '</div>';
+      if (aa.bilan) html += '<div class="rslbl">📋 Bilan S-1</div><div class="rtext">' + e(aa.bilan) + (aa.anImg?' <span style="color:var(--adm)">[Screenshot SF joint]</span>':'') + '</div>';
+      if (aa.plan) html += '<div class="rslbl">🎯 Plan d actions S+1</div><div class="rtext">' + e(aa.plan) + '</div>';
       html += '</div>';
     });
   }
