@@ -318,10 +318,10 @@ async function saveToCloud() {
   ss('loading', 'Sauvegarde...');
   try { localStorage.setItem('yn_bk', JSON.stringify(S.persons)); } catch(_) {}
   try {
-    var res = await fetch(AURL, {
+    var res = await fetch(AURL + '/persons.json', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Access-Key': AKEY },
-      body: JSON.stringify({ persons: S.persons })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(S.persons)
     });
     if (!res.ok) throw new Error(res.status);
     ss('ok', 'Sauvegarde ' + new Date().toLocaleTimeString('fr-FR'));
