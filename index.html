@@ -318,15 +318,16 @@ async function saveToCloud() {
   ss('loading', 'Sauvegarde...');
   try { localStorage.setItem('yn_bk', JSON.stringify(S.persons)); } catch(_) {}
   try {
-    var res = await fetch(AURL + '/persons.json', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(S.persons, function(key, value) {
-  if (key === 'anImg') return '';
-  return value;
-})
-    });
-    if (!res.ok) throw new Error(res.status);
+    var ids = Object.keys(S.persons);
+    for (var i = 0; i < ids.length; i++) {
+      var id = ids[i];
+      var res = await fetch(AURL + '/persons/' + id + '.json', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(S.persons[id])
+      });
+      if (!res.ok) throw new Error(res.status);
+    }
     ss('ok', 'Sauvegarde ' + new Date().toLocaleTimeString('fr-FR'));
     toast('Sauvegarde pour toute l equipe', 'ok');
   } catch(e) {
