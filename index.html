@@ -305,7 +305,10 @@ async function loadFromCloud() {
     var res = await fetch(AURL + '/persons.json');
     if (!res.ok) throw new Error(res.status);
     var data = await res.json();
-    S.persons = data ? data : {};
+    S.persons = {};
+    if (data) {
+      Object.keys(data).forEach(function(id) { S.persons[id] = data[id]; });
+    }
     schema();
     ss('ok', 'Synchronise ' + new Date().toLocaleTimeString('fr-FR'));
   } catch(e) {
