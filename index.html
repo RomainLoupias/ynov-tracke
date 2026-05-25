@@ -321,7 +321,10 @@ async function saveToCloud() {
     var res = await fetch(AURL + '/persons.json', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(S.persons)
+      body: JSON.stringify(S.persons, function(key, value) {
+  if (key === 'anImg') return '';
+  return value;
+})
     });
     if (!res.ok) throw new Error(res.status);
     ss('ok', 'Sauvegarde ' + new Date().toLocaleTimeString('fr-FR'));
