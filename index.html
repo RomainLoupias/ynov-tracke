@@ -559,10 +559,10 @@ function mkKpiAdm(p) {
 }
 
 function mkKpiCre(p) {
-  var k = p.kpis;
+  var kgw = p.aFil ? getFiliereWeekData(p, p.aFil).k : {};
   var g = "<div class=\"kpi-band\" style=\"grid-template-columns:repeat(2,1fr)\">"
-    + "<div class=\"kpi-cell\"><div class=\"kpi-label\">Offres actives (total)</div><div class=\"kpi-value biz\">" + (k.offres_actives != null ? k.offres_actives : "—") + "</div></div>"
-    + "<div class=\"kpi-cell\"><div class=\"kpi-label\">Candidats actifs</div><div class=\"kpi-value biz\">" + (k.candidats_actifs != null ? k.candidats_actifs : "—") + "</div></div>"
+    + "<div class=\"kpi-cell\"><div class=\"kpi-label\">Offres actives (total)</div><div class=\"kpi-value biz\">" + (kgw.offres_actives != null ? kgw.offres_actives : "—") + "</div></div>"
+    + "<div class=\"kpi-cell\"><div class=\"kpi-label\">Candidats actifs</div><div class=\"kpi-value biz\">" + (kgw.candidats_actifs != null ? kgw.candidats_actifs : "—") + "</div></div>"
     + "</div>";
   if (!p.aFil) return g + "<div class=\"no-filiere\">Ajoutez une filiere pour les KPIs par filiere</div>";
   var kf = getFiliereWeekData(p, p.aFil).k;
