@@ -433,8 +433,9 @@ function openKpiCre(pid, fil) {
   var p = S.persons[pid];
   document.getElementById('mKpiCreTitle').textContent = p.name;
   document.getElementById('mKpiCreFiliere').textContent = fil || 'aucune filiere selectionnee';
-  document.getElementById('kc_offres_actives').value = p.kpis.offres_actives != null ? p.kpis.offres_actives : '';
-  document.getElementById('kc_candidats_actifs').value = p.kpis.candidats_actifs != null ? p.kpis.candidats_actifs : '';
+  var kgw = getFiliereWeekData(p, _efi || (p.fil[0] || 'global')).k;
+  document.getElementById('kc_offres_actives').value = kgw.offres_actives != null ? kgw.offres_actives : '';
+  document.getElementById('kc_candidats_actifs').value = kgw.candidats_actifs != null ? kgw.candidats_actifs : '';
   var kf = fil ? getFiliereWeekData(p, fil).k : {};
   ['offres_ymatch','offres_pushed','cv_approved','bip','alternances'].forEach(function(key) {
     document.getElementById('kc_' + key).value = kf[key] != null ? kf[key] : '';
