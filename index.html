@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>YNOV Toulouse — Suivi Activité</title>
+<title>YNOV Toulouse — Suivi Activite</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-:root{--bg:#0d0f14;--surface:#141720;--surface2:#1c2030;--border:#252a3a;--accent:#e8ff3c;--adm:#3ce8c8;--biz:#e8a03c;--text:#e8eaf0;--muted:#6b7280;--done:#22c55e;--partial:#f59e0b;--missed:#ef4444;}
+:root{--bg:#ffffff;--surface:#f8f9fa;--surface2:#f0f2f5;--border:#e0e4ea;--accent:#1a73e8;--adm:#0d9488;--biz:#d97706;--text:#1a1a2e;--muted:#6b7280;--done:#16a34a;--partial:#d97706;--missed:#dc2626;}
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;overflow-x:hidden;}
 header{padding:1.5rem 2.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:100;}
@@ -36,14 +37,14 @@ header{padding:1.5rem 2.5rem;border-bottom:1px solid var(--border);display:flex;
 .add-person-row input{background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.78rem;padding:0.45rem 0.8rem;outline:none;width:200px;}
 .btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:0.72rem;padding:0.45rem 0.9rem;border-radius:6px;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
 .btn:hover{border-color:var(--accent);color:var(--accent);}
-.btn.primary{background:var(--accent);color:#0d0f14;border-color:var(--accent);font-weight:500;}
-.btn.primary:hover{opacity:0.85;color:#0d0f14;}
+.btn.primary{background:var(--accent);color:#ffffff;border-color:var(--accent);font-weight:500;}
+.btn.primary:hover{opacity:0.85;}
 .btn.sm{font-size:0.65rem;padding:0.3rem 0.6rem;}
 .btn.danger:hover{border-color:var(--missed);color:var(--missed);}
-.persons-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(500px,1fr));gap:1.5rem;}
-.person-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
-.person-card.adm{border-top:2px solid var(--adm);}
-.person-card.biz{border-top:2px solid var(--biz);}
+.persons-grid{display:flex;flex-direction:column;gap:0;}
+.person-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06);}
+.person-card.adm{border-top:3px solid var(--adm);}
+.person-card.biz{border-top:3px solid var(--biz);}
 .card-head{display:flex;align-items:center;justify-content:space-between;padding:0.9rem 1.25rem;border-bottom:1px solid var(--border);background:var(--surface2);}
 .card-name{font-family:'Syne',sans-serif;font-weight:700;font-size:0.88rem;}
 .card-btns{display:flex;gap:0.4rem;align-items:center;}
@@ -55,7 +56,7 @@ header{padding:1.5rem 2.5rem;border-bottom:1px solid var(--border);display:flex;
 .fadd{display:flex;align-items:center;gap:0.3rem;margin-left:0.5rem;flex-shrink:0;}
 .fadd input{background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.62rem;padding:0.2rem 0.5rem;outline:none;width:100px;}
 .kpi-band{display:grid;border-bottom:1px solid var(--border);}
-.kpi-cell{padding:0.65rem 0.5rem;text-align:center;border-right:1px solid var(--border);}
+.kpi-cell{padding:0.65rem 0.5rem;text-align:center;border-right:1px solid var(--border);background:var(--bg);}
 .kpi-cell:last-child{border-right:none;}
 .kpi-label{font-size:0.5rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;line-height:1.3;margin-bottom:0.2rem;}
 .kpi-value{font-family:'DM Serif Display',serif;font-size:1.4rem;line-height:1;}
@@ -68,46 +69,42 @@ header{padding:1.5rem 2.5rem;border-bottom:1px solid var(--border);display:flex;
 .taction{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0.6rem 0.8rem;margin-bottom:0.5rem;}
 .taction:last-child{margin-bottom:0;}
 .ta-lbl{font-size:0.56rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.3rem;}
-.ta-content{font-size:0.74rem;line-height:1.5;white-space:pre-wrap;}
+.ta-content{font-size:0.74rem;line-height:1.5;white-space:pre-wrap;color:var(--text);}
 .ta-empty{font-size:0.7rem;color:var(--muted);font-style:italic;}
-.shot-block{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0.6rem 0.8rem;}
-.shot-slot{background:var(--bg);border:1px dashed var(--border);border-radius:6px;padding:0.5rem;text-align:center;min-width:150px;}
-.shot-slot img{max-width:100%;max-height:110px;border-radius:4px;display:block;margin:0 auto 0.3rem;object-fit:contain;}
-.shot-empty{font-size:0.65rem;color:var(--muted);padding:0.8rem 0;}
-.pipe-item{display:flex;align-items:flex-start;gap:0.5rem;padding:0.4rem 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.74rem;}
+.pipe-item{display:flex;align-items:flex-start;gap:0.5rem;padding:0.4rem 0;border-bottom:1px solid var(--border);font-size:0.74rem;}
 .pipe-item:last-child{border-bottom:none;}
 .pi-main{flex:1;}
 .pi-badge{font-size:0.6rem;padding:0.15rem 0.5rem;border-radius:4px;cursor:pointer;border:none;font-family:'DM Mono',monospace;text-transform:uppercase;flex-shrink:0;}
-.ps-prospect{background:rgba(107,114,128,0.2);color:var(--muted);}
-.ps-contact{background:rgba(232,160,60,0.2);color:var(--biz);}
-.ps-rdv{background:rgba(60,232,200,0.15);color:var(--adm);}
-.ps-negocia{background:rgba(245,158,11,0.2);color:var(--partial);}
-.ps-signe{background:rgba(34,197,94,0.2);color:var(--done);}
-.ps-perdu{background:rgba(239,68,68,0.15);color:var(--missed);}
+.ps-prospect{background:rgba(107,114,128,0.15);color:var(--muted);}
+.ps-contact{background:rgba(217,119,6,0.15);color:var(--biz);}
+.ps-rdv{background:rgba(13,148,136,0.15);color:var(--adm);}
+.ps-negocia{background:rgba(245,158,11,0.15);color:var(--partial);}
+.ps-signe{background:rgba(22,163,74,0.15);color:var(--done);}
+.ps-perdu{background:rgba(220,38,38,0.15);color:var(--missed);}
 .pi-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.68rem;flex-shrink:0;}
 .pi-btn:hover{color:var(--missed);}
 .strat{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.74rem;padding:0.5rem 0.7rem;outline:none;resize:vertical;min-height:58px;}
 .strat:focus{border-color:var(--biz);}
 .empty-state{text-align:center;padding:4rem 2rem;color:var(--muted);font-size:0.8rem;display:none;}
 .empty-state.show{display:block;}
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;}
 .overlay.open{display:flex;}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:min(480px,93vw);padding:1.75rem;max-height:90vh;overflow-y:auto;}
-.modal h3{font-family:'Syne',sans-serif;font-weight:700;font-size:0.95rem;margin-bottom:1.2rem;}
+.modal{background:var(--bg);border:1px solid var(--border);border-radius:14px;width:min(480px,93vw);padding:1.75rem;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.12);}
+.modal h3{font-family:'Syne',sans-serif;font-weight:700;font-size:0.95rem;margin-bottom:1.2rem;color:var(--text);}
 .modal label{display:block;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);margin-bottom:0.3rem;margin-top:0.8rem;}
-.modal input,.modal textarea,.modal select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.78rem;padding:0.5rem 0.75rem;outline:none;}
+.modal input,.modal textarea,.modal select{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.78rem;padding:0.5rem 0.75rem;outline:none;}
 .modal textarea{resize:vertical;min-height:80px;}
 .modal select option{background:var(--surface);}
 .mfooter{display:flex;gap:0.75rem;justify-content:flex-end;margin-top:1.5rem;}
 .modal-sep{font-size:0.6rem;color:var(--biz);text-transform:uppercase;letter-spacing:0.12em;margin-top:1rem;padding-top:0.8rem;border-top:1px solid var(--border);}
-.rpanel{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);z-index:300;overflow-y:auto;}
+.rpanel{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(6px);z-index:300;overflow-y:auto;}
 .rpanel.open{display:block;}
-.rinner{max-width:900px;margin:3rem auto 4rem;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:3rem;}
-.rclose{float:right;cursor:pointer;font-size:0.72rem;color:var(--muted);background:var(--surface2);border:1px solid var(--border);padding:0.35rem 0.8rem;border-radius:6px;font-family:'DM Mono',monospace;}
-.rtitle{font-family:'DM Serif Display',serif;font-size:2.2rem;margin-bottom:0.4rem;clear:both;}
+.rinner{max-width:900px;margin:3rem auto 4rem;background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:3rem;box-shadow:0 8px 32px rgba(0,0,0,0.12);}
+.rclose{float:right;cursor:pointer;font-size:0.72rem;color:var(--muted);background:var(--surface);border:1px solid var(--border);padding:0.35rem 0.8rem;border-radius:6px;font-family:'DM Mono',monospace;}
+.rtitle{font-family:'DM Serif Display',serif;font-size:2.2rem;margin-bottom:0.4rem;clear:both;color:var(--text);}
 .rmeta{font-size:0.7rem;color:var(--muted);margin-bottom:2.5rem;}
 .rteam{font-family:'Syne',sans-serif;font-weight:800;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.2em;color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:0.4rem;margin:2rem 0 1rem;}
-.rperson{margin-bottom:2rem;padding:1.25rem;background:var(--surface2);border-radius:10px;}
+.rperson{margin-bottom:2rem;padding:1.25rem;background:var(--surface);border-radius:10px;}
 .rperson.adm{border-left:3px solid var(--adm);}
 .rperson.biz{border-left:3px solid var(--biz);}
 .rpname{font-family:'Syne',sans-serif;font-weight:700;font-size:0.92rem;margin-bottom:0.8rem;}
@@ -119,20 +116,23 @@ header{padding:1.5rem 2.5rem;border-bottom:1px solid var(--border);display:flex;
 .rkpi{color:var(--muted);}
 .rkpi strong{color:var(--text);}
 .rslbl{font-size:0.58rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);margin-bottom:0.3rem;margin-top:0.65rem;}
-.rtext{font-size:0.73rem;line-height:1.55;white-space:pre-wrap;}
-.rpipe{font-size:0.72rem;padding:0.18rem 0;} 
+.rtext{font-size:0.73rem;line-height:1.55;white-space:pre-wrap;color:var(--text);}
+.rpipe{font-size:0.72rem;padding:0.18rem 0;}
 .badge{font-size:0.58rem;padding:0.1rem 0.4rem;border-radius:3px;margin-left:0.3rem;display:inline-block;}
-.toast{position:fixed;bottom:1.5rem;right:1.5rem;z-index:500;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.6rem 1rem;font-size:0.7rem;color:var(--muted);display:none;box-shadow:0 4px 20px rgba(0,0,0,0.4);}
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;z-index:500;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.6rem 1rem;font-size:0.7rem;color:var(--muted);display:none;box-shadow:0 4px 20px rgba(0,0,0,0.1);}
 .toast.show{display:block;}
 .toast.ok{color:var(--done);border-color:var(--done);}
 .toast.err{color:var(--missed);border-color:var(--missed);}
+.card-chart{padding:0.9rem 1.25rem 1rem;border-top:1px solid var(--border);}
+.card-chart canvas{max-height:140px;width:100%!important;}
+.chart-title{font-size:0.56rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.5rem;}
+
 @media print{
   body,.rpanel{background:white;color:black;}
-  header,.sync-bar,.team-switcher,.container{display:none;}
+  header,.sync-bar,.team-switcher,.container,.stats-wrap{display:none;}
   .rpanel{display:block;position:static;}
   .rinner{border:none;margin:0;padding:1rem;background:white;}
   .rclose,.btn{display:none;}
-  *{color:black!important;background:white!important;border-color:#ccc!important;}
 }
 </style>
 </head>
@@ -140,7 +140,7 @@ header{padding:1.5rem 2.5rem;border-bottom:1px solid var(--border);display:flex;
 <header>
   <div>
     <div class="logo-name">YNOV TOULOUSE</div>
-    <div class="logo-sub">Suivi Activité Equipes · Direction Campus</div>
+    <div class="logo-sub">Suivi Activite Equipes · Direction Campus</div>
   </div>
   <div class="week-display">
     <strong id="wRange">—</strong>
@@ -158,7 +158,7 @@ header{padding:1.5rem 2.5rem;border-bottom:1px solid var(--border);display:flex;
   <button class="team-tab adm active" onclick="switchTeam('adm',this)">🎓 Admissions</button>
   <button class="team-tab biz" onclick="switchTeam('biz',this)">🤝 CRE — Relations Entreprises</button>
 </div>
-<div class="container">
+<div class="container" id="mainContainer">
   <div class="top-actions">
     <div class="top-left">
       <div class="week-nav">
@@ -200,10 +200,10 @@ header{padding:1.5rem 2.5rem;border-bottom:1px solid var(--border);display:flex;
 <div class="overlay" id="mKpiCre">
   <div class="modal">
     <h3>KPIs CRE — <span id="mKpiCreTitle"></span></h3>
-    <div class="modal-sep" style="margin-top:0;padding-top:0;border-top:none;color:var(--muted)">KPIs globaux (toutes filieres)</div>
-    <label>Offres actives sur Ymatch (stock total)</label><input type="number" id="kc_offres_actives" min="0" placeholder="0"/>
+    <div class="modal-sep" style="margin-top:0;padding-top:0;border-top:none;color:var(--muted)">KPIs de la filiere active</div>
+    <label>Offres actives sur Ymatch</label><input type="number" id="kc_offres_actives" min="0" placeholder="0"/>
     <label>Candidats actifs (matchables)</label><input type="number" id="kc_candidats_actifs" min="0" placeholder="0"/>
-    <div class="modal-sep">KPIs par filiere — <span id="mKpiCreFiliere" style="color:var(--biz)"></span></div>
+    <div class="modal-sep">KPIs specifiques — <span id="mKpiCreFiliere" style="color:var(--biz)"></span></div>
     <label>Offres publiees cette semaine (Ymatch)</label><input type="number" id="kc_offres_ymatch" min="0" placeholder="0"/>
     <label>Offres poussees aux etudiants</label><input type="number" id="kc_offres_pushed" min="0" placeholder="0"/>
     <label>CV approuves</label><input type="number" id="kc_cv_approved" min="0" placeholder="0"/>
@@ -216,12 +216,12 @@ header{padding:1.5rem 2.5rem;border-bottom:1px solid var(--border);display:flex;
   </div>
 </div>
 
-<!-- MODAL TEXT ACTION -->
+<!-- MODAL TEXT -->
 <div class="overlay" id="mText">
   <div class="modal">
     <h3 id="mTextTitle">—</h3>
     <label id="mTextLabel">—</label>
-    <textarea id="mTextContent" rows="5"></textarea>
+    <textarea id="mTextContent" rows="6"></textarea>
     <div class="mfooter">
       <button class="btn" onclick="closeOverlay('mText')">Annuler</button>
       <button class="btn primary" onclick="saveTextAction()">Enregistrer</button>
@@ -237,15 +237,15 @@ header{padding:1.5rem 2.5rem;border-bottom:1px solid var(--border);display:flex;
     <label>Secteur / Domaine</label><input type="text" id="mp_sector" placeholder="Ex : Tech, Aero, Marketing..."/>
     <label>Statut</label>
     <select id="mp_status">
-      <option value="prospect">Prospect (identifiee)</option>
+      <option value="prospect">Prospect</option>
       <option value="contact">Premier contact</option>
       <option value="rdv">RDV planifie / realise</option>
       <option value="negocia">En negociation</option>
       <option value="signe">Convention signee</option>
       <option value="perdu">Perdu / Sans suite</option>
     </select>
-    <label>Levier / Partenaire</label><input type="text" id="mp_lever" placeholder="Ex : LinkedIn, reseau, evenement..."/>
-    <label>Etudiant(s) place(s) en alternance</label><input type="text" id="mp_students" placeholder="Ex : Thomas D., Lea M."/>
+    <label>Levier / Partenaire</label><input type="text" id="mp_lever" placeholder="Ex : LinkedIn, reseau..."/>
+    <label>Etudiant(s) place(s)</label><input type="text" id="mp_students" placeholder="Ex : Thomas D., Lea M."/>
     <label>Notes / Prochaine action</label><textarea id="mp_notes" rows="3" placeholder="Ex : RDV le 28 mai..."></textarea>
     <div class="mfooter">
       <button class="btn" onclick="closeOverlay('mPipe')">Annuler</button>
@@ -270,13 +270,11 @@ header{padding:1.5rem 2.5rem;border-bottom:1px solid var(--border);display:flex;
 <div class="toast" id="toast"></div>
 
 <script>
-var BIN = '6a107ed1ee5a733b1201a406';
-var AKEY = '$2a$10$9Lewl62lKT/GCmehoGNCCOConmqOmpMoNTe/wjNUaEMWnzWcPdMEq';
-var AURL = 'https://api.jsonbin.io/v3/b/' + BIN;
-
+var AURL = 'https://ynov-tracker-default-rtdb.europe-west1.firebasedatabase.app';
 var S = { team: 'adm', wOff: 0, persons: {} };
 var saveTimer = null;
 var _eid = null, _efi = null, _epi = null, _etk = null;
+var chartInstances = {};
 
 function ss(st, msg) {
   document.getElementById('sDot').className = 'sync-dot ' + st;
@@ -292,17 +290,19 @@ function getWK() { return getWKey(S.wOff); }
 function getWeekData(p) {
   var wk = getWK();
   if (!p.weeks) p.weeks = {};
-  if (!p.weeks[wk]) p.weeks[wk] = { aa: { bilan:'', plan:'', anImg:'', anName:'' }, cd: { strat:'', lev:'', autre:'', nego:'' }, pipe:[] };
-  if (!p.weeks[wk].aa) p.weeks[wk].aa = { bilan:'', plan:'', anImg:'', anName:'' };
-  if (!p.weeks[wk].cd) p.weeks[wk].cd = { strat:'', lev:'', autre:'', nego:'' };
-  if (!p.weeks[wk].pipe) p.weeks[wk].pipe = [];
-  return p.weeks[wk];
+  if (!p.weeks[wk]) p.weeks[wk] = {};
+  var w = p.weeks[wk];
+  if (!w.aa) w.aa = { bilan:'', plan:'', anImg:'', anName:'' };
+  if (!w.cd) w.cd = { strat:'', lev:'', autre:'', nego:'' };
+  if (!w.pipe) w.pipe = [];
+  return w;
 }
 
-function getFiliereWeekData(p, fil) {
+function getFWD(p, fil) {
   var wk = getWK();
+  if (!p.fData) p.fData = {};
   if (!p.fData[fil]) p.fData[fil] = {};
-  if (!p.fData[fil][wk]) p.fData[fil][wk] = { k: {} };
+  if (!p.fData[fil][wk]) p.fData[fil][wk] = { k:{} };
   if (!p.fData[fil][wk].k) p.fData[fil][wk].k = {};
   return p.fData[fil][wk];
 }
@@ -313,17 +313,18 @@ function schema() {
     if (!p.aFil) p.aFil = null;
     if (!p.fData) p.fData = {};
     if (!p.weeks) p.weeks = {};
-    if (!p.kpis) p.kpis = {};
     p.fil.forEach(function(f) { if (!p.fData[f]) p.fData[f] = {}; });
   });
 }
+
 async function loadFromCloud() {
   ss('loading', 'Chargement...');
   try {
-    var res = await fetch(AURL + '/latest', { headers: { 'X-Access-Key': AKEY } });
+    var res = await fetch(AURL + '/persons.json');
     if (!res.ok) throw new Error(res.status);
     var data = await res.json();
-    S.persons = data.record && data.record.persons ? data.record.persons : {};
+    S.persons = {};
+    if (data) { Object.keys(data).forEach(function(id) { S.persons[id] = data[id]; }); }
     schema();
     ss('ok', 'Synchronise ' + new Date().toLocaleTimeString('fr-FR'));
   } catch(e) {
@@ -332,16 +333,21 @@ async function loadFromCloud() {
   }
   render();
 }
+
 async function saveToCloud() {
   ss('loading', 'Sauvegarde...');
   try { localStorage.setItem('yn_bk', JSON.stringify(S.persons)); } catch(_) {}
   try {
-    var res = await fetch(AURL, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Access-Key': AKEY },
-      body: JSON.stringify({ persons: S.persons })
-    });
-    if (!res.ok) throw new Error(res.status);
+    var ids = Object.keys(S.persons);
+    for (var i = 0; i < ids.length; i++) {
+      var id = ids[i];
+      var res = await fetch(AURL + '/persons/' + id + '.json', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(S.persons[id])
+      });
+      if (!res.ok) throw new Error(res.status);
+    }
     ss('ok', 'Sauvegarde ' + new Date().toLocaleTimeString('fr-FR'));
     toast('Sauvegarde pour toute l equipe', 'ok');
   } catch(e) {
@@ -349,7 +355,14 @@ async function saveToCloud() {
     toast('Sauvegarde locale uniquement', 'err');
   }
 }
-function save() { schema(); clearTimeout(saveTimer); saveTimer = setTimeout(saveToCloud, 1500); }
+
+function save() {
+  schema();
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveToCloud, 1500);
+  // Redraw charts inline without full re-render
+  Object.values(S.persons).filter(function(p){ return p.team === S.team; }).forEach(function(p){ drawPersonChart(p); });
+}
 function forceSave() { clearTimeout(saveTimer); saveToCloud(); }
 function forceLoad() { loadFromCloud(); }
 
@@ -380,7 +393,7 @@ function addPerson() {
   var name = document.getElementById('newName').value.trim();
   if (!name) return;
   var id = 'p' + Date.now();
-  S.persons[id] = { id: id, name: name, team: S.team, fil: [], aFil: null, fData: {}, kpis: {}, weeks: {} };
+  S.persons[id] = { id:id, name:name, team:S.team, fil:[], aFil:null, fData:{}, weeks:{} };
   document.getElementById('newName').value = '';
   save(); render();
 }
@@ -394,7 +407,7 @@ function addFil(pid) {
   var p = S.persons[pid];
   if (p.fil.indexOf(name) >= 0) return;
   p.fil.push(name);
-  if (!p.fData[name]) p.fData[name] = { k: {} };
+  if (!p.fData[name]) p.fData[name] = {};
   if (!p.aFil) p.aFil = name;
   input.value = '';
   save(); render();
@@ -412,15 +425,14 @@ function openKpiAdm(pid, fil) {
   _eid = pid; _efi = fil;
   var p = S.persons[pid];
   document.getElementById('mKpiAdmTitle').textContent = p.name + ' - ' + fil;
-  var k = getFiliereWeekData(p, fil).k;
+  var k = getFWD(p, fil).k;
   ['calls','dossiers','rdv_done','noshow','rdv_planned'].forEach(function(key) {
     document.getElementById('ka_' + key).value = k[key] != null ? k[key] : '';
   });
   openOv('mKpiAdm');
 }
 function saveKpiAdm() {
-  var p = S.persons[_eid];
-  var k = getFiliereWeekData(p, _efi).k;
+  var k = getFWD(S.persons[_eid], _efi).k;
   ['calls','dossiers','rdv_done','noshow','rdv_planned'].forEach(function(key) {
     var v = document.getElementById('ka_' + key).value;
     k[key] = v !== '' ? parseInt(v) : null;
@@ -432,30 +444,20 @@ function openKpiCre(pid, fil) {
   _eid = pid; _efi = fil;
   var p = S.persons[pid];
   document.getElementById('mKpiCreTitle').textContent = p.name;
-  document.getElementById('mKpiCreFiliere').textContent = fil || 'aucune filiere selectionnee';
-  var kgw = getFiliereWeekData(p, _efi || (p.fil[0] || 'global')).k;
-  document.getElementById('kc_offres_actives').value = kgw.offres_actives != null ? kgw.offres_actives : '';
-  document.getElementById('kc_candidats_actifs').value = kgw.candidats_actifs != null ? kgw.candidats_actifs : '';
-  var kf = fil ? getFiliereWeekData(p, fil).k : {};
-  ['offres_ymatch','offres_pushed','cv_approved','bip','alternances'].forEach(function(key) {
+  document.getElementById('mKpiCreFiliere').textContent = fil || 'aucune filiere';
+  var kf = fil ? getFWD(p, fil).k : {};
+  ['offres_actives','candidats_actifs','offres_ymatch','offres_pushed','cv_approved','bip','alternances'].forEach(function(key) {
     document.getElementById('kc_' + key).value = kf[key] != null ? kf[key] : '';
   });
   openOv('mKpiCre');
 }
 function saveKpiCre() {
-  var p = S.persons[_eid];
-  var kgw = getFiliereWeekData(p, _efi || (p.fil[0] || 'global')).k;
-  ['offres_actives','candidats_actifs'].forEach(function(key) {
+  if (!_efi) return;
+  var kf = getFWD(S.persons[_eid], _efi).k;
+  ['offres_actives','candidats_actifs','offres_ymatch','offres_pushed','cv_approved','bip','alternances'].forEach(function(key) {
     var v = document.getElementById('kc_' + key).value;
-    kgw[key] = v !== '' ? parseInt(v) : null;
+    kf[key] = v !== '' ? parseInt(v) : null;
   });
-  if (_efi) {
-    var kf = getFiliereWeekData(p, _efi).k;
-    ['offres_ymatch','offres_pushed','cv_approved','bip','alternances'].forEach(function(key) {
-      var v = document.getElementById('kc_' + key).value;
-      kf[key] = v !== '' ? parseInt(v) : null;
-    });
-  }
   save(); closeOverlay('mKpiCre'); render();
 }
 
@@ -464,8 +466,8 @@ function openTA(pid, key) {
   var p = S.persons[pid];
   var titles = { bilan: 'Bilan S-1 — ' + p.name, plan: 'Plan d actions S+1 — ' + p.name };
   var phs = {
-    bilan: '(Relances SF : rapports utilises, qui relance, resultats)\n(No-shows : qui, comment relance, suites)\n(Anomalies SF : evolution constatee vs semaine passee)\n(Reinscriptions : etat des dossiers, actions)\n(Autres points...)',
-    plan: '(Actions prevues cette semaine)\n(Timing : qui fait quoi et quand)\n(Blocages identifies : pourquoi pas fait, comment debloquer)\n(Echeance de resolution)'
+    bilan: '(Relances SF : rapports utilises, qui relance, resultats) | (No-shows : qui, comment relance, suites) | (Anomalies SF : evolution constatee) | (Reinscriptions : etat des dossiers) | (Autres points...)',
+    plan: '(Actions prevues cette semaine) | (Timing : qui fait quoi et quand) | (Blocages identifies : pourquoi pas fait, comment debloquer) | (Echeance de resolution)'
   };
   document.getElementById('mTextTitle').textContent = titles[key];
   document.getElementById('mTextLabel').textContent = key === 'bilan' ? 'Analyse libre de la semaine passee' : 'Actions et timing pour la semaine a venir';
@@ -482,7 +484,11 @@ function trigUp(pid) { document.getElementById('fu_' + pid).click(); }
 function handleImg(pid, input) {
   var file = input.files[0]; if (!file) return;
   var r = new FileReader();
-  r.onload = function(e) { getWeekData(S.persons[pid]).aa.anImg = e.target.result; getWeekData(S.persons[pid]).aa.anName = file.name; save(); render(); };
+  r.onload = function(ev) {
+    getWeekData(S.persons[pid]).aa.anImg = ev.target.result;
+    getWeekData(S.persons[pid]).aa.anName = file.name;
+    save(); render();
+  };
   r.readAsDataURL(file);
 }
 
@@ -491,8 +497,7 @@ var PSC = { prospect:'ps-prospect', contact:'ps-contact', rdv:'ps-rdv', negocia:
 
 function openPipe(pid, idx) {
   _eid = pid; _epi = idx != null ? idx : null;
-  var p = S.persons[pid];
-  var wd = getWeekData(p);
+  var wd = getWeekData(S.persons[pid]);
   if (idx != null) {
     var item = wd.pipe[idx];
     document.getElementById('mPipeName').textContent = item.company;
@@ -510,17 +515,9 @@ function openPipe(pid, idx) {
   openOv('mPipe');
 }
 function savePipe() {
-  var wd = getWeekData(S.persons[_eid]);
-  var item = {
-    company: document.getElementById('mp_company').value.trim(),
-    sector: document.getElementById('mp_sector').value.trim(),
-    status: document.getElementById('mp_status').value,
-    lever: document.getElementById('mp_lever').value.trim(),
-    students: document.getElementById('mp_students').value.trim(),
-    notes: document.getElementById('mp_notes').value.trim()
-  };
+  var item = { company:document.getElementById('mp_company').value.trim(), sector:document.getElementById('mp_sector').value.trim(), status:document.getElementById('mp_status').value, lever:document.getElementById('mp_lever').value.trim(), students:document.getElementById('mp_students').value.trim(), notes:document.getElementById('mp_notes').value.trim() };
   if (!item.company) return;
-  var p = S.persons[_eid];
+  var wd = getWeekData(S.persons[_eid]);
   if (_epi != null) wd.pipe[_epi] = item; else wd.pipe.push(item);
   save(); closeOverlay('mPipe'); render();
 }
@@ -535,108 +532,83 @@ function saveCd(pid, key, val) { getWeekData(S.persons[pid]).cd[key] = val; save
 
 function e(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-
 function mkFiliereBar(p, team) {
   var ac = team === "adm" ? "active-adm" : "active-biz";
   var tabs = p.fil.map(function(f) {
     var cls = p.aFil === f ? ac : "";
-    return "<button class=\"ftab " + cls + "\" data-pid=\"" + p.id + "\" data-f=\"" + e(f) + "\" data-action=\"swf\">"
-      + e(f)
-      + "<span data-pid=\"" + p.id + "\" data-f=\"" + e(f) + "\" data-action=\"delf\" style=\"margin-left:0.3rem;opacity:0.5;font-size:0.58rem\"> x</span></button>";
+    return "<button class=\"ftab " + cls + "\" data-pid=\"" + p.id + "\" data-f=\"" + e(f) + "\" data-action=\"swf\">" + e(f) + "<span data-pid=\"" + p.id + "\" data-f=\"" + e(f) + "\" data-action=\"delf\" style=\"margin-left:0.3rem;opacity:0.5;font-size:0.58rem\"> x</span></button>";
   }).join("");
-  return "<div class=\"filiere-bar\">" + tabs
-    + "<div class=\"fadd\"><input id=\"fi_" + p.id + "\" placeholder=\"+ Filiere\" data-pid=\"" + p.id + "\" data-action=\"addf\"/>"
-    + "<button class=\"btn sm\" data-pid=\"" + p.id + "\" data-action=\"addf\">+</button></div></div>";
+  return "<div class=\"filiere-bar\">" + tabs + "<div class=\"fadd\"><input id=\"fi_" + p.id + "\" placeholder=\"+ Filiere\" data-pid=\"" + p.id + "\" data-action=\"addf\"/><button class=\"btn sm\" data-pid=\"" + p.id + "\" data-action=\"addf\">+</button></div></div>";
 }
 
 function mkKpiAdm(p) {
   if (!p.aFil) return "<div class=\"no-filiere\">Ajoutez une filiere pour saisir les KPIs</div>";
-  var k = getFiliereWeekData(p, p.aFil).k;
-  var cells = [["calls","Appels",k.calls],["dossiers","Dossiers",k.dossiers],["rdv_done","RDV S-1",k.rdv_done],["noshow","No-shows",k.noshow],["rdv_planned","RDV planifies",k.rdv_planned]];
-  return "<div class=\"kpi-band\" style=\"grid-template-columns:repeat(5,1fr)\">"
-    + cells.map(function(c) { return "<div class=\"kpi-cell\"><div class=\"kpi-label\">" + c[1] + "</div><div class=\"kpi-value adm\">" + (c[2] != null ? c[2] : "—") + "</div></div>"; }).join("")
-    + "</div>";
+  var k = getFWD(p, p.aFil).k;
+  return "<div class=\"kpi-band\" style=\"grid-template-columns:repeat(5,1fr)\">" +
+    [["calls","Appels",k.calls],["dossiers","Dossiers",k.dossiers],["rdv_done","RDV S-1",k.rdv_done],["noshow","No-shows",k.noshow],["rdv_planned","RDV planifies",k.rdv_planned]]
+    .map(function(c) { return "<div class=\"kpi-cell\"><div class=\"kpi-label\">" + c[1] + "</div><div class=\"kpi-value adm\">" + (c[2] != null ? c[2] : "—") + "</div></div>"; }).join("") + "</div>";
 }
 
 function mkKpiCre(p) {
-  var kgw = p.aFil ? getFiliereWeekData(p, p.aFil).k : {};
-  var g = "<div class=\"kpi-band\" style=\"grid-template-columns:repeat(2,1fr)\">"
-    + "<div class=\"kpi-cell\"><div class=\"kpi-label\">Offres actives (total)</div><div class=\"kpi-value biz\">" + (kgw.offres_actives != null ? kgw.offres_actives : "—") + "</div></div>"
-    + "<div class=\"kpi-cell\"><div class=\"kpi-label\">Candidats actifs</div><div class=\"kpi-value biz\">" + (kgw.candidats_actifs != null ? kgw.candidats_actifs : "—") + "</div></div>"
-    + "</div>";
-  if (!p.aFil) return g + "<div class=\"no-filiere\">Ajoutez une filiere pour les KPIs par filiere</div>";
-  var kf = getFiliereWeekData(p, p.aFil).k;
-  var row = "<div class=\"kpi-band\" style=\"grid-template-columns:repeat(5,1fr)\">"
-    + [["offres_ymatch","Offres Ymatch",kf.offres_ymatch],["offres_pushed","Offres poussees",kf.offres_pushed],["cv_approved","CV approuves",kf.cv_approved],["bip","BIP realises",kf.bip],["alternances","Alternances signees",kf.alternances]]
-      .map(function(c) { return "<div class=\"kpi-cell\"><div class=\"kpi-label\">" + c[1] + "</div><div class=\"kpi-value biz\">" + (c[2] != null ? c[2] : "—") + "</div></div>"; }).join("")
-    + "</div>";
-  return g + row;
+  if (!p.aFil) return "<div class=\"no-filiere\">Ajoutez une filiere pour saisir les KPIs</div>";
+  var k = getFWD(p, p.aFil).k;
+  var top = "<div class=\"kpi-band\" style=\"grid-template-columns:repeat(2,1fr)\">" +
+    [["offres_actives","Offres actives",k.offres_actives],["candidats_actifs","Candidats actifs",k.candidats_actifs]]
+    .map(function(c) { return "<div class=\"kpi-cell\"><div class=\"kpi-label\">" + c[1] + "</div><div class=\"kpi-value biz\">" + (c[2] != null ? c[2] : "—") + "</div></div>"; }).join("") + "</div>";
+  var bot = "<div class=\"kpi-band\" style=\"grid-template-columns:repeat(5,1fr)\">" +
+    [["offres_ymatch","Offres Ymatch",k.offres_ymatch],["offres_pushed","Offres poussees",k.offres_pushed],["cv_approved","CV approuves",k.cv_approved],["bip","BIP realises",k.bip],["alternances","Alternances signees",k.alternances]]
+    .map(function(c) { return "<div class=\"kpi-cell\"><div class=\"kpi-label\">" + c[1] + "</div><div class=\"kpi-value biz\">" + (c[2] != null ? c[2] : "—") + "</div></div>"; }).join("") + "</div>";
+  return top + bot;
 }
 
-function taBlock(pid, key, aa, icon, title) {
-  var wd = getWeekData(S.persons[pid]); var aa = wd.aa; var content = aa[key];
+function taBlock(pid, key, icon, title) {
+  var aa = getWeekData(S.persons[pid]).aa;
+  var content = aa[key];
   var phs = {
     bilan: '(Relances SF : rapports utilises, qui relance, resultats) (No-shows : qui, comment relance, suites) (Anomalies SF : evolution constatee) (Reinscriptions : etat des dossiers) (Autres points...)',
     plan: '(Actions prevues) (Timing : qui fait quoi et quand) (Blocages : pourquoi pas fait, comment debloquer, echeance)'
   };
-  return "<div class=\"taction\">"
-    + "<div class=\"ta-lbl\">" + icon + " " + title + "</div>"
-    + (content
-        ? "<div class=\"ta-content\">" + e(content) + "</div>"
-        : "<div class=\"ta-empty\">" + phs[key] + "</div>")
-    + "<button class=\"btn sm\" style=\"margin-top:0.4rem\" data-pid=\"" + pid + "\" data-key=\"" + key + "\" data-action=\"ta\">"
-    + (content ? "✎ Modifier" : "+ Renseigner") + "</button>"
-    + (content && key === 'bilan'
-        ? "<button class=\"btn sm\" style=\"margin-top:0.4rem;margin-left:0.4rem\" data-pid=\"" + pid + "\" data-action=\"trigup\">📸 " + (aa.anImg ? "Screenshot joint" : "Ajouter screenshot SF") + "</button>"
-          + "<input type=\"file\" accept=\"image/*\" id=\"fu_" + pid + "\" data-pid=\"" + pid + "\" data-action=\"imgup\" style=\"display:none\"/>"
-          + (aa.anImg ? "<div style=\"margin-top:0.4rem\"><img src=\"" + aa.anImg + "\" style=\"max-height:80px;border-radius:4px\"/></div>" : "")
-        : "")
-    + "</div>";
+  var shotBtn = (key === 'bilan') ? ("<button class=\"btn sm\" style=\"margin-top:0.4rem;margin-left:0.4rem\" data-pid=\"" + pid + "\" data-action=\"trigup\">📸 " + (aa.anImg ? "Screenshot joint" : "Ajouter screenshot SF") + "</button><input type=\"file\" accept=\"image/*\" id=\"fu_" + pid + "\" data-pid=\"" + pid + "\" data-action=\"imgup\" style=\"display:none\"/>" + (aa.anImg ? "<div style=\"margin-top:0.4rem\"><img src=\"" + aa.anImg + "\" style=\"max-height:80px;border-radius:4px\"/></div>" : "")) : "";
+  return "<div class=\"taction\"><div class=\"ta-lbl\">" + icon + " " + title + "</div>" +
+    (content ? "<div class=\"ta-content\">" + e(content) + "</div>" : "<div class=\"ta-empty\">" + phs[key] + "</div>") +
+    "<button class=\"btn sm\" style=\"margin-top:0.4rem\" data-pid=\"" + pid + "\" data-key=\"" + key + "\" data-action=\"ta\">" + (content ? "✎ Modifier" : "+ Renseigner") + "</button>" + shotBtn + "</div>";
 }
 
 function renderAdmCard(p) {
-  var aa = getWeekData(p).aa;
-  var kpiBtn = p.aFil ? "<button class=\"btn sm\" data-pid=\"" + p.id + "\" data-fil=\"" + e(p.aFil) + "\" data-action=\"kpiadm\">📊 KPIs</button>" : "";
-  return "<div class=\"person-card adm\">"
-    + "<div class=\"card-head\"><div class=\"card-name\">" + e(p.name) + "</div><div class=\"card-btns\">" + kpiBtn + "<button class=\"btn sm danger\" data-pid=\"" + p.id + "\" data-action=\"delperson\">x</button></div></div>"
-    + mkFiliereBar(p, "adm")
-    + mkKpiAdm(p)
-    + "<div class=\"card-section\">"
-    + taBlock(p.id, "bilan", aa, "📋", "Bilan S-1")
-    + "</div>"
-    + "<div class=\"card-section\">"
-    + taBlock(p.id, "plan", aa, "🎯", "Plan d actions S+1")
-    + "</div>"
-    + "</div>";
+  var kpiBtn = p.aFil ? ("<button class=\"btn sm\" data-pid=\"" + p.id + "\" data-fil=\"" + e(p.aFil) + "\" data-action=\"kpiadm\">📊 KPIs</button>") : "";
+  return "<div class=\"person-card adm\">" +
+    "<div class=\"card-head\"><div class=\"card-name\">" + e(p.name) + "</div><div class=\"card-btns\">" + kpiBtn + "<button class=\"btn sm danger\" data-pid=\"" + p.id + "\" data-action=\"delperson\">✕</button></div></div>" +
+    mkFiliereBar(p, "adm") + mkKpiAdm(p) +
+    "<div class=\"card-section\">" + taBlock(p.id, "bilan", "📋", "Bilan S-1") + "</div>" +
+    "<div class=\"card-section\">" + taBlock(p.id, "plan", "🎯", "Plan d actions S+1") + "</div>" +
+    mkInlineChart(p, ADM_KPIS, "adm") +
+    "</div>";
 }
 
 function renderCreCard(p) {
   var wd = getWeekData(p); var cd = wd.cd; var pl = wd.pipe || [];
   var kpiBtn = "<button class=\"btn sm\" data-pid=\"" + p.id + "\" data-fil=\"" + e(p.aFil || "") + "\" data-action=\"kpicre\">KPIs</button>";
   var pipeHtml = pl.length ? pl.map(function(item, i) {
-    return "<div class=\"pipe-item\">"
-      + "<div class=\"pi-main\"><div style=\"font-weight:500\">" + e(item.company) + "</div>"
-      + (item.sector ? "<div style=\"font-size:0.6rem;color:var(--muted)\">" + e(item.sector) + "</div>" : "")
-      + (item.students ? "<div style=\"font-size:0.6rem;color:var(--done)\">🎓 " + e(item.students) + "</div>" : "")
-      + (item.notes ? "<div style=\"font-size:0.6rem;color:var(--muted)\">" + e(item.notes.substring(0,80)) + (item.notes.length>80?"...":"") + "</div>" : "")
-      + "</div>"
-      + (item.lever ? "<div style=\"font-size:0.62rem;color:var(--muted);max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap\">⚡ " + e(item.lever) + "</div>" : "")
-      + "<button class=\"pi-badge " + PSC[item.status] + "\" data-pid=\"" + p.id + "\" data-idx=\"" + i + "\" data-action=\"cyclepipe\">" + PSL[item.status] + "</button>"
-      + "<button class=\"pi-btn\" data-pid=\"" + p.id + "\" data-idx=\"" + i + "\" data-action=\"editpipe\">✎</button>"
-      + "<button class=\"pi-btn\" data-pid=\"" + p.id + "\" data-idx=\"" + i + "\" data-action=\"delpipe\">✕</button>"
-      + "</div>";
+    return "<div class=\"pipe-item\"><div class=\"pi-main\"><div style=\"font-weight:500\">" + e(item.company) + "</div>" +
+      (item.sector ? "<div style=\"font-size:0.6rem;color:var(--muted)\">" + e(item.sector) + "</div>" : "") +
+      (item.students ? "<div style=\"font-size:0.6rem;color:var(--done)\">🎓 " + e(item.students) + "</div>" : "") +
+      (item.notes ? "<div style=\"font-size:0.6rem;color:var(--muted)\">" + e(item.notes.substring(0,80)) + (item.notes.length>80?"...":"") + "</div>" : "") +
+      "</div>" + (item.lever ? "<div style=\"font-size:0.62rem;color:var(--muted);max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap\">⚡ " + e(item.lever) + "</div>" : "") +
+      "<button class=\"pi-badge " + PSC[item.status] + "\" data-pid=\"" + p.id + "\" data-idx=\"" + i + "\" data-action=\"cyclepipe\">" + PSL[item.status] + "</button>" +
+      "<button class=\"pi-btn\" data-pid=\"" + p.id + "\" data-idx=\"" + i + "\" data-action=\"editpipe\">✎</button>" +
+      "<button class=\"pi-btn\" data-pid=\"" + p.id + "\" data-idx=\"" + i + "\" data-action=\"delpipe\">✕</button></div>";
   }).join("") : "<div style=\"font-size:0.7rem;color:var(--muted);padding:0.3rem 0\">Aucune entreprise dans le pipeline.</div>";
 
-  return "<div class=\"person-card biz\">"
-    + "<div class=\"card-head\"><div class=\"card-name\">" + e(p.name) + "</div><div class=\"card-btns\">" + kpiBtn + "<button class=\"btn sm danger\" data-pid=\"" + p.id + "\" data-action=\"delperson\">x</button></div></div>"
-    + mkFiliereBar(p, "biz")
-    + mkKpiCre(p)
-    + "<div class=\"card-section\"><div class=\"section-title\">Pipeline Entreprises <span><button class=\"btn sm\" data-pid=\"" + p.id + "\" data-action=\"addpipe\">+ Ajouter</button></span></div>" + pipeHtml + "</div>"
-    + "<div class=\"card-section\"><div class=\"section-title\">🔄 Negociations en cours</div><textarea class=\"strat\" data-pid=\"" + p.id + "\" data-key=\"nego\" data-action=\"cdtext\" placeholder=\"Ex : Capgemini — contrat en relecture RH...\">" + e(cd.nego||"") + "</textarea></div>"
-    + "<div class=\"card-section\"><div class=\"section-title\">🎯 Strategie BD</div><textarea class=\"strat\" data-pid=\"" + p.id + "\" data-key=\"strat\" data-action=\"cdtext\" placeholder=\"Cibles, approche, timing, canaux...\">" + e(cd.strat||"") + "</textarea></div>"
-    + "<div class=\"card-section\"><div class=\"section-title\">⚡ Leviers & Partenaires</div><textarea class=\"strat\" data-pid=\"" + p.id + "\" data-key=\"lev\" data-action=\"cdtext\" placeholder=\"Ex : LinkedIn, jobdating campus, reseau alumni...\">" + e(cd.lev||"") + "</textarea></div>"
-    + "<div class=\"card-section\"><div class=\"section-title\">💬 Autre</div><textarea class=\"strat\" data-pid=\"" + p.id + "\" data-key=\"autre\" data-action=\"cdtext\" placeholder=\"Un blocage, une info, une idee...\">" + e(cd.autre||"") + "</textarea></div>"
-    + "</div>";
+  return "<div class=\"person-card biz\">" +
+    "<div class=\"card-head\"><div class=\"card-name\">" + e(p.name) + "</div><div class=\"card-btns\">" + kpiBtn + "<button class=\"btn sm danger\" data-pid=\"" + p.id + "\" data-action=\"delperson\">✕</button></div></div>" +
+    mkFiliereBar(p, "biz") + mkKpiCre(p) +
+    "<div class=\"card-section\"><div class=\"section-title\">Pipeline Entreprises <span><button class=\"btn sm\" data-pid=\"" + p.id + "\" data-action=\"addpipe\">+ Ajouter</button></span></div>" + pipeHtml + "</div>" +
+    "<div class=\"card-section\"><div class=\"section-title\">🔄 Negociations en cours</div><textarea class=\"strat\" data-pid=\"" + p.id + "\" data-key=\"nego\" data-action=\"cdtext\" placeholder=\"Ex : Capgemini — contrat en relecture RH...\">" + e(cd.nego||"") + "</textarea></div>" +
+    "<div class=\"card-section\"><div class=\"section-title\">🎯 Strategie BD</div><textarea class=\"strat\" data-pid=\"" + p.id + "\" data-key=\"strat\" data-action=\"cdtext\" placeholder=\"Cibles, approche, timing, canaux...\">" + e(cd.strat||"") + "</textarea></div>" +
+    "<div class=\"card-section\"><div class=\"section-title\">⚡ Leviers & Partenaires</div><textarea class=\"strat\" data-pid=\"" + p.id + "\" data-key=\"lev\" data-action=\"cdtext\" placeholder=\"Ex : LinkedIn, jobdating campus, reseau alumni...\">" + e(cd.lev||"") + "</textarea></div>" +
+    "<div class=\"card-section\"><div class=\"section-title\">💬 Autre</div><textarea class=\"strat\" data-pid=\"" + p.id + "\" data-key=\"autre\" data-action=\"cdtext\" placeholder=\"Un blocage, une info, une idee...\">" + e(cd.autre||"") + "</textarea></div>" +
+    mkInlineChart(p, CRE_KPIS, "biz") +
+    "</div>";
 }
 
 function render() {
@@ -645,9 +617,80 @@ function render() {
   var persons = Object.values(S.persons).filter(function(p) { return p.team === S.team; });
   if (!persons.length) { grid.innerHTML = ''; empty.classList.add('show'); return; }
   empty.classList.remove('show');
-  grid.innerHTML = persons.map(function(p) { return p.team === 'adm' ? renderAdmCard(p) : renderCreCard(p); }).join('');
+  grid.innerHTML = persons.map(function(p) {
+    var card = p.team === 'adm' ? renderAdmCard(p) : renderCreCard(p);
+    var chartId = 'ch_' + p.id;
+    var chartCard = "<div class=\"chart-card " + p.team + "\" id=\"cc_" + p.id + "\"><div class=\"chart-card-title\">📊 " + e(p.name) + " — 8 semaines</div><canvas id=\"" + chartId + "\" style=\"max-height:220px\"></canvas></div>";
+    return "<div class=\"person-row\">" + card + chartCard + "</div>";
+  }).join('');
+  // Draw charts after DOM is updated
+  setTimeout(function() {
+    persons.forEach(function(p) { drawPersonChart(p); });
+  }, 50);
 }
 
+// ── INLINE CHARTS ──
+var CHART_COLORS = ['#0d9488','#d97706','#7c3aed','#db2777','#16a34a','#2563eb','#ea580c','#ca8a04'];
+var ADM_KPIS = [['calls','Appels'],['rdv_done','RDV effectues'],['noshow','No-shows'],['rdv_planned','RDV planifies'],['dossiers','Dossiers']];
+var CRE_KPIS = [['offres_actives','Offres actives'],['offres_ymatch','Offres Ymatch'],['offres_pushed','Offres poussees'],['cv_approved','CV approuves'],['alternances','Alternances'],['bip','BIP']];
+
+function getLastWeeks(n) {
+  var wks = [];
+  for (var i = n-1; i >= 0; i--) wks.push(getWKey(S.wOff - i));
+  return wks;
+}
+function wLabel(wk) { return 'S' + wk.split('-W')[1]; }
+
+function getFKpi(p, fil, wk, key) {
+  if (!p.fData || !p.fData[fil] || !p.fData[fil][wk] || !p.fData[fil][wk].k) return 0;
+  return p.fData[fil][wk].k[key] || 0;
+}
+
+function destroyCharts() {
+  Object.keys(chartInstances).forEach(function(k) { try { chartInstances[k].destroy(); } catch(ex) {} });
+  chartInstances = {};
+}
+
+function drawInlineChart(canvasId, labels, datasets) {
+  if (chartInstances[canvasId]) { try { chartInstances[canvasId].destroy(); } catch(ex) {} }
+  var ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+  chartInstances[canvasId] = new Chart(ctx.getContext('2d'), {
+    type: 'line',
+    data: { labels: labels, datasets: datasets },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { color: '#1a1a2e', font: { size: 9, family: 'DM Mono' } } } },
+      scales: {
+        x: { ticks: { color: '#6b7280', font: { size: 9 } }, grid: { color: '#e0e4ea' } },
+        y: { ticks: { color: '#6b7280', font: { size: 9 } }, grid: { color: '#e0e4ea' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+function mkInlineChart(p, kpiList, color) {
+  var cid = 'inlinechart_' + p.id;
+  var weeks = getLastWeeks(8);
+  var wlbls = weeks.map(wLabel);
+  var ds = kpiList.map(function(kpi, ki) {
+    return {
+      label: kpi[1],
+      data: weeks.map(function(wk) {
+        var t = 0;
+        p.fil.forEach(function(f) { t += getFKpi(p, f, wk, kpi[0]); });
+        return t;
+      }),
+      borderColor: CHART_COLORS[ki % CHART_COLORS.length],
+      backgroundColor: CHART_COLORS[ki % CHART_COLORS.length] + '15',
+      tension: 0.3, fill: false, pointRadius: 3, borderWidth: 2
+    };
+  });
+  setTimeout(function() { drawInlineChart(cid, wlbls, ds); }, 50);
+  return "<div class=\"card-chart\"><div class=\"chart-title\">Evolution sur 8 semaines</div><canvas id=\"" + cid + "\"></canvas></div>";
+}
+
+// ── REPORT ──
 function openReport() {
   document.getElementById('rMeta').textContent = 'YNOV Campus Toulouse - ' + getWKey(S.wOff) + ' (' + getWLbl(S.wOff) + ') - ' + new Date().toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   var html = '';
@@ -657,19 +700,15 @@ function openReport() {
     adms.forEach(function(p) {
       var aa = getWeekData(p).aa;
       html += '<div class="rperson adm"><div class="rpname">' + e(p.name) + '</div>';
-      if (p.fil.length) {
-        p.fil.forEach(function(f) {
-          var k = getFiliereWeekData(p, f).k;
-          html += '<div class="rfiliere adm">📚 ' + e(f) + '</div>'
-            + '<div class="rkpis">'
-            + '<span class="rkpi"><strong>' + (k.calls!=null?k.calls:'—') + '</strong> appels</span>'
-            + '<span class="rkpi"><strong>' + (k.dossiers!=null?k.dossiers:'—') + '</strong> dossiers</span>'
-            + '<span class="rkpi"><strong>' + (k.rdv_done!=null?k.rdv_done:'—') + '</strong> RDV effectues</span>'
-            + '<span class="rkpi"><strong>' + (k.noshow!=null?k.noshow:'—') + '</strong> no-shows</span>'
-            + '<span class="rkpi"><strong>' + (k.rdv_planned!=null?k.rdv_planned:'—') + '</strong> RDV planifies</span>'
-            + '</div>';
-        });
-      }
+      p.fil.forEach(function(f) {
+        var k = getFWD(p, f).k;
+        html += '<div class="rfiliere adm">📚 ' + e(f) + '</div><div class="rkpis">' +
+          '<span class="rkpi"><strong>' + (k.calls!=null?k.calls:'—') + '</strong> appels</span>' +
+          '<span class="rkpi"><strong>' + (k.dossiers!=null?k.dossiers:'—') + '</strong> dossiers</span>' +
+          '<span class="rkpi"><strong>' + (k.rdv_done!=null?k.rdv_done:'—') + '</strong> RDV effectues</span>' +
+          '<span class="rkpi"><strong>' + (k.noshow!=null?k.noshow:'—') + '</strong> no-shows</span>' +
+          '<span class="rkpi"><strong>' + (k.rdv_planned!=null?k.rdv_planned:'—') + '</strong> RDV planifies</span></div>';
+      });
       if (aa.bilan) html += '<div class="rslbl">📋 Bilan S-1</div><div class="rtext">' + e(aa.bilan) + (aa.anImg?' <span style="color:var(--adm)">[Screenshot SF joint]</span>':'') + '</div>';
       if (aa.plan) html += '<div class="rslbl">🎯 Plan d actions S+1</div><div class="rtext">' + e(aa.plan) + '</div>';
       html += '</div>';
@@ -679,42 +718,35 @@ function openReport() {
   if (cres.length) {
     html += '<div class="rteam">Charges de Relations Entreprises</div>';
     cres.forEach(function(p) {
-      var k = p.kpis; var wd2 = getWeekData(p); var cd = wd2.cd||{}; var pl = wd2.pipe||[];
+      var wd = getWeekData(p); var cd = wd.cd||{}; var pl = wd.pipe||[];
       var signed = pl.filter(function(i){return i.status==='signe';}).length;
       var active = pl.filter(function(i){return ['contact','rdv','negocia'].indexOf(i.status)>=0;}).length;
-      html += '<div class="rperson biz"><div class="rpname">' + e(p.name) + '</div>'
-        + '<div class="rkpis">'
-        + '<span class="rkpi"><strong>' + (k.offres_actives!=null?k.offres_actives:'—') + '</strong> offres actives</span>'
-        + '<span class="rkpi"><strong>' + (k.candidats_actifs!=null?k.candidats_actifs:'—') + '</strong> candidats actifs</span>'
-        + '</div>';
-      if (p.fil.length) {
-        p.fil.forEach(function(f) {
-          var kf = getFiliereWeekData(p, f).k;
-          html += '<div class="rfiliere biz">📚 ' + e(f) + '</div>'
-            + '<div class="rkpis">'
-            + '<span class="rkpi"><strong>' + (kf.offres_ymatch!=null?kf.offres_ymatch:'—') + '</strong> offres Ymatch</span>'
-            + '<span class="rkpi"><strong>' + (kf.offres_pushed!=null?kf.offres_pushed:'—') + '</strong> poussees</span>'
-            + '<span class="rkpi"><strong>' + (kf.cv_approved!=null?kf.cv_approved:'—') + '</strong> CV approuves</span>'
-            + '<span class="rkpi"><strong>' + (kf.bip!=null?kf.bip:'—') + '</strong> BIP</span>'
-            + '<span class="rkpi"><strong>' + (kf.alternances!=null?kf.alternances:'—') + '</strong> alternances</span>'
-            + '</div>';
-        });
-      }
+      html += '<div class="rperson biz"><div class="rpname">' + e(p.name) + '</div>';
+      p.fil.forEach(function(f) {
+        var kf = getFWD(p, f).k;
+        html += '<div class="rfiliere biz">📚 ' + e(f) + '</div><div class="rkpis">' +
+          '<span class="rkpi"><strong>' + (kf.offres_actives!=null?kf.offres_actives:'—') + '</strong> offres actives</span>' +
+          '<span class="rkpi"><strong>' + (kf.candidats_actifs!=null?kf.candidats_actifs:'—') + '</strong> candidats actifs</span>' +
+          '<span class="rkpi"><strong>' + (kf.offres_ymatch!=null?kf.offres_ymatch:'—') + '</strong> offres Ymatch</span>' +
+          '<span class="rkpi"><strong>' + (kf.offres_pushed!=null?kf.offres_pushed:'—') + '</strong> poussees</span>' +
+          '<span class="rkpi"><strong>' + (kf.cv_approved!=null?kf.cv_approved:'—') + '</strong> CV approuves</span>' +
+          '<span class="rkpi"><strong>' + (kf.bip!=null?kf.bip:'—') + '</strong> BIP</span>' +
+          '<span class="rkpi"><strong>' + (kf.alternances!=null?kf.alternances:'—') + '</strong> alternances</span></div>';
+      });
       if (pl.length) {
         html += '<div class="rslbl">Pipeline (' + pl.length + ' entreprises - ' + signed + ' signees - ' + active + ' en cours)</div>';
         pl.forEach(function(item) {
-          html += '<div class="rpipe"><strong>' + e(item.company) + '</strong>'
-            + (item.sector?' - <span style="opacity:0.6">'+e(item.sector)+'</span>':'')
-            + '<span class="badge ' + PSC[item.status] + '">' + PSL[item.status] + '</span>'
-            + (item.lever?' <span style="font-size:0.62rem;opacity:0.6">⚡'+e(item.lever)+'</span>':'')
-            + (item.students?' <span style="font-size:0.62rem;color:var(--done)">🎓'+e(item.students)+'</span>':'')
-            + (item.notes?'<div style="font-size:0.65rem;opacity:0.6;margin-left:0.5rem">'+e(item.notes)+'</div>':'')
-            + '</div>';
+          html += '<div class="rpipe"><strong>' + e(item.company) + '</strong>' +
+            (item.sector?' - <span style="opacity:0.6">'+e(item.sector)+'</span>':'') +
+            '<span class="badge ' + PSC[item.status] + '">' + PSL[item.status] + '</span>' +
+            (item.lever?' <span style="font-size:0.62rem;opacity:0.6">⚡'+e(item.lever)+'</span>':'') +
+            (item.students?' <span style="font-size:0.62rem;color:var(--done)">🎓'+e(item.students)+'</span>':'') +
+            (item.notes?'<div style="font-size:0.65rem;opacity:0.6;margin-left:0.5rem">'+e(item.notes)+'</div>':'') + '</div>';
         });
       }
-      if (cd.nego) html += '<div class="rslbl">Negociations en cours</div><div class="rtext">' + e(cd.nego) + '</div>';
+      if (cd.nego) html += '<div class="rslbl">Negociations</div><div class="rtext">' + e(cd.nego) + '</div>';
       if (cd.strat) html += '<div class="rslbl">Strategie BD</div><div class="rtext">' + e(cd.strat) + '</div>';
-      if (cd.lev) html += '<div class="rslbl">Leviers & Partenaires</div><div class="rtext">' + e(cd.lev) + '</div>';
+      if (cd.lev) html += '<div class="rslbl">Leviers</div><div class="rtext">' + e(cd.lev) + '</div>';
       if (cd.autre) html += '<div class="rslbl">Autre</div><div class="rtext">' + e(cd.autre) + '</div>';
       html += '</div>';
     });
@@ -734,6 +766,7 @@ function switchTeam(team, el) {
   S.team = team;
   document.querySelectorAll('.team-tab').forEach(function(t) { t.classList.remove('active'); });
   el.classList.add('active');
+  destroyCharts();
   render();
 }
 
@@ -754,7 +787,7 @@ document.addEventListener('click', function(ev) {
   else if (action === 'kpiadm') { openKpiAdm(pid, fil); }
   else if (action === 'kpicre') { openKpiCre(pid, fil); }
   else if (action === 'ta') { openTA(pid, key); }
-  else if (action === 'trigup') { document.getElementById('fu_'+pid).click(); }
+  else if (action === 'trigup') { trigUp(pid); }
   else if (action === 'addpipe') { openPipe(pid, null); }
   else if (action === 'editpipe') { openPipe(pid, parseInt(idx)); }
   else if (action === 'delpipe') { delPipe(pid, parseInt(idx)); }
@@ -770,14 +803,14 @@ document.addEventListener('input', function(ev) {
   var t = ev.target;
   var action = t.getAttribute('data-action');
   var pid = t.getAttribute('data-pid');
-  if (action === 'annote') { saveAnNote(pid, t.value); }
-  else if (action === 'cdtext') { saveCd(pid, t.getAttribute('data-key'), t.value); }
+  if (action === 'cdtext') { saveCd(pid, t.getAttribute('data-key'), t.value); }
   else if (action === 'imgup') { handleImg(pid, t); }
 });
 document.addEventListener('change', function(ev) {
   var t = ev.target;
   if (t.getAttribute('data-action') === 'imgup') { handleImg(t.getAttribute('data-pid'), t); }
 });
+
 updateWUI();
 loadFromCloud();
 </script>
