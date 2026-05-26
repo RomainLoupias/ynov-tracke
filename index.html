@@ -444,9 +444,10 @@ function openKpiCre(pid, fil) {
 }
 function saveKpiCre() {
   var p = S.persons[_eid];
+  var kgw = getFiliereWeekData(p, _efi || (p.fil[0] || 'global')).k;
   ['offres_actives','candidats_actifs'].forEach(function(key) {
     var v = document.getElementById('kc_' + key).value;
-    p.kpis[key] = v !== '' ? parseInt(v) : null;
+    kgw[key] = v !== '' ? parseInt(v) : null;
   });
   if (_efi) {
     var kf = getFiliereWeekData(p, _efi).k;
