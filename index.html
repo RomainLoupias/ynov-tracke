@@ -6,7 +6,7 @@
 <title>YNOV Toulouse — Suivi Activité</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#ffffff;--surface:#f8f9fa;--surface2:#f0f2f5;--border:#e0e4ea;--accent:#1a73e8;--adm:#0d9488;--biz:#d97706;--text:#1a1a2e;--muted:#6b7280;--done:#16a34a;--partial:#d97706;--missed:#dc2626;}
+:root{--bg:#0d0f14;--surface:#141720;--surface2:#1c2030;--border:#252a3a;--accent:#e8ff3c;--adm:#3ce8c8;--biz:#e8a03c;--text:#e8eaf0;--muted:#6b7280;--done:#22c55e;--partial:#f59e0b;--missed:#ef4444;}
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;overflow-x:hidden;}
 header{padding:1.5rem 2.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:100;}
@@ -270,9 +270,9 @@ header{padding:1.5rem 2.5rem;border-bottom:1px solid var(--border);display:flex;
 <div class="toast" id="toast"></div>
 
 <script>
-var BIN = 'ynov-tracker';
-var AKEY = '';
-var AURL = 'https://ynov-tracker-default-rtdb.europe-west1.firebasedatabase.app';
+var BIN = '6a107ed1ee5a733b1201a406';
+var AKEY = '$2a$10$9Lewl62lKT/GCmehoGNCCOConmqOmpMoNTe/wjNUaEMWnzWcPdMEq';
+var AURL = 'https://api.jsonbin.io/v3/b/' + BIN;
 
 var S = { team: 'adm', wOff: 0, persons: {} };
 var saveTimer = null;
@@ -287,28 +287,43 @@ function toast(msg, t) {
   el.textContent = msg; el.className = 'toast show ' + t;
   setTimeout(function() { el.className = 'toast'; }, 2800);
 }
+function getWK() { return getWKey(S.wOff); }
+
+function getWeekData(p) {
+  var wk = getWK();
+  if (!p.weeks) p.weeks = {};
+  if (!p.weeks[wk]) p.weeks[wk] = { aa: { bilan:'', plan:'', anImg:'', anName:'' }, cd: { strat:'', lev:'', autre:'', nego:'' }, pipe:[] };
+  if (!p.weeks[wk].aa) p.weeks[wk].aa = { bilan:'', plan:'', anImg:'', anName:'' };
+  if (!p.weeks[wk].cd) p.weeks[wk].cd = { strat:'', lev:'', autre:'', nego:'' };
+  if (!p.weeks[wk].pipe) p.weeks[wk].pipe = [];
+  return p.weeks[wk];
+}
+
+function getFiliereWeekData(p, fil) {
+  var wk = getWK();
+  if (!p.fData[fil]) p.fData[fil] = {};
+  if (!p.fData[fil][wk]) p.fData[fil][wk] = { k: {} };
+  if (!p.fData[fil][wk].k) p.fData[fil][wk].k = {};
+  return p.fData[fil][wk];
+}
+
 function schema() {
   Object.values(S.persons).forEach(function(p) {
     if (!p.fil) p.fil = [];
     if (!p.aFil) p.aFil = null;
     if (!p.fData) p.fData = {};
-    if (!p.aa) p.aa = { bilan: '', plan: '', anImg: '', anName: '' };
-    if (!p.cd) p.cd = { strat: '', lev: '', autre: '', nego: '' };
+    if (!p.weeks) p.weeks = {};
     if (!p.kpis) p.kpis = {};
-    if (!p.pipe) p.pipe = [];
-    p.fil.forEach(function(f) { if (!p.fData[f]) p.fData[f] = { k: {} }; });
+    p.fil.forEach(function(f) { if (!p.fData[f]) p.fData[f] = {}; });
   });
 }
 async function loadFromCloud() {
   ss('loading', 'Chargement...');
   try {
-    var res = await fetch(AURL + '/persons.json');
+    var res = await fetch(AURL + '/latest', { headers: { 'X-Access-Key': AKEY } });
     if (!res.ok) throw new Error(res.status);
     var data = await res.json();
-    S.persons = {};
-    if (data) {
-      Object.keys(data).forEach(function(id) { S.persons[id] = data[id]; });
-    }
+    S.persons = data.record && data.record.persons ? data.record.persons : {};
     schema();
     ss('ok', 'Synchronise ' + new Date().toLocaleTimeString('fr-FR'));
   } catch(e) {
@@ -321,16 +336,12 @@ async function saveToCloud() {
   ss('loading', 'Sauvegarde...');
   try { localStorage.setItem('yn_bk', JSON.stringify(S.persons)); } catch(_) {}
   try {
-    var ids = Object.keys(S.persons);
-    for (var i = 0; i < ids.length; i++) {
-      var id = ids[i];
-      var res = await fetch(AURL + '/persons/' + id + '.json', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(S.persons[id])
-      });
-      if (!res.ok) throw new Error(res.status);
-    }
+    var res = await fetch(AURL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Access-Key': AKEY },
+      body: JSON.stringify({ persons: S.persons })
+    });
+    if (!res.ok) throw new Error(res.status);
     ss('ok', 'Sauvegarde ' + new Date().toLocaleTimeString('fr-FR'));
     toast('Sauvegarde pour toute l equipe', 'ok');
   } catch(e) {
@@ -369,7 +380,7 @@ function addPerson() {
   var name = document.getElementById('newName').value.trim();
   if (!name) return;
   var id = 'p' + Date.now();
-  S.persons[id] = { id: id, name: name, team: S.team, fil: [], aFil: null, fData: {}, kpis: {}, aa: { bilan:'', plan:'', anImg:'', anName:'' }, cd: { strat:'', lev:'', autre:'', nego:'' }, pipe: [] };
+  S.persons[id] = { id: id, name: name, team: S.team, fil: [], aFil: null, fData: {}, kpis: {}, weeks: {} };
   document.getElementById('newName').value = '';
   save(); render();
 }
@@ -401,7 +412,7 @@ function openKpiAdm(pid, fil) {
   _eid = pid; _efi = fil;
   var p = S.persons[pid];
   document.getElementById('mKpiAdmTitle').textContent = p.name + ' - ' + fil;
-  var k = p.fData[fil] ? p.fData[fil].k : {};
+  var k = getFiliereWeekData(p, fil).k;
   ['calls','dossiers','rdv_done','noshow','rdv_planned'].forEach(function(key) {
     document.getElementById('ka_' + key).value = k[key] != null ? k[key] : '';
   });
@@ -409,8 +420,7 @@ function openKpiAdm(pid, fil) {
 }
 function saveKpiAdm() {
   var p = S.persons[_eid];
-  if (!p.fData[_efi]) p.fData[_efi] = { k: {} };
-  var k = p.fData[_efi].k;
+  var k = getFiliereWeekData(p, _efi).k;
   ['calls','dossiers','rdv_done','noshow','rdv_planned'].forEach(function(key) {
     var v = document.getElementById('ka_' + key).value;
     k[key] = v !== '' ? parseInt(v) : null;
@@ -425,7 +435,7 @@ function openKpiCre(pid, fil) {
   document.getElementById('mKpiCreFiliere').textContent = fil || 'aucune filiere selectionnee';
   document.getElementById('kc_offres_actives').value = p.kpis.offres_actives != null ? p.kpis.offres_actives : '';
   document.getElementById('kc_candidats_actifs').value = p.kpis.candidats_actifs != null ? p.kpis.candidats_actifs : '';
-  var kf = fil && p.fData[fil] ? p.fData[fil].k : {};
+  var kf = fil ? getFiliereWeekData(p, fil).k : {};
   ['offres_ymatch','offres_pushed','cv_approved','bip','alternances'].forEach(function(key) {
     document.getElementById('kc_' + key).value = kf[key] != null ? kf[key] : '';
   });
@@ -438,8 +448,7 @@ function saveKpiCre() {
     p.kpis[key] = v !== '' ? parseInt(v) : null;
   });
   if (_efi) {
-    if (!p.fData[_efi]) p.fData[_efi] = { k: {} };
-    var kf = p.fData[_efi].k;
+    var kf = getFiliereWeekData(p, _efi).k;
     ['offres_ymatch','offres_pushed','cv_approved','bip','alternances'].forEach(function(key) {
       var v = document.getElementById('kc_' + key).value;
       kf[key] = v !== '' ? parseInt(v) : null;
@@ -459,11 +468,11 @@ function openTA(pid, key) {
   document.getElementById('mTextTitle').textContent = titles[key];
   document.getElementById('mTextLabel').textContent = key === 'bilan' ? 'Analyse libre de la semaine passee' : 'Actions et timing pour la semaine a venir';
   var ta = document.getElementById('mTextContent');
-  ta.placeholder = phs[key]; ta.value = p.aa[key] || '';
+  ta.placeholder = phs[key]; ta.value = getWeekData(p).aa[key] || '';
   openOv('mText');
 }
 function saveTextAction() {
-  S.persons[_eid].aa[_etk] = document.getElementById('mTextContent').value.trim();
+  getWeekData(S.persons[_eid]).aa[_etk] = document.getElementById('mTextContent').value.trim();
   save(); closeOverlay('mText'); render();
 }
 
@@ -471,7 +480,7 @@ function trigUp(pid) { document.getElementById('fu_' + pid).click(); }
 function handleImg(pid, input) {
   var file = input.files[0]; if (!file) return;
   var r = new FileReader();
-  r.onload = function(e) { S.persons[pid].aa.anImg = e.target.result; S.persons[pid].aa.anName = file.name; save(); render(); };
+  r.onload = function(e) { getWeekData(S.persons[pid]).aa.anImg = e.target.result; getWeekData(S.persons[pid]).aa.anName = file.name; save(); render(); };
   r.readAsDataURL(file);
 }
 
@@ -481,8 +490,9 @@ var PSC = { prospect:'ps-prospect', contact:'ps-contact', rdv:'ps-rdv', negocia:
 function openPipe(pid, idx) {
   _eid = pid; _epi = idx != null ? idx : null;
   var p = S.persons[pid];
+  var wd = getWeekData(p);
   if (idx != null) {
-    var item = p.pipe[idx];
+    var item = wd.pipe[idx];
     document.getElementById('mPipeName').textContent = item.company;
     document.getElementById('mp_company').value = item.company || '';
     document.getElementById('mp_sector').value = item.sector || '';
@@ -498,6 +508,7 @@ function openPipe(pid, idx) {
   openOv('mPipe');
 }
 function savePipe() {
+  var wd = getWeekData(S.persons[_eid]);
   var item = {
     company: document.getElementById('mp_company').value.trim(),
     sector: document.getElementById('mp_sector').value.trim(),
@@ -508,17 +519,17 @@ function savePipe() {
   };
   if (!item.company) return;
   var p = S.persons[_eid];
-  if (_epi != null) p.pipe[_epi] = item; else p.pipe.push(item);
+  if (_epi != null) wd.pipe[_epi] = item; else wd.pipe.push(item);
   save(); closeOverlay('mPipe'); render();
 }
-function delPipe(pid, idx) { S.persons[pid].pipe.splice(idx, 1); save(); render(); }
+function delPipe(pid, idx) { getWeekData(S.persons[pid]).pipe.splice(idx, 1); save(); render(); }
 function cyclePipe(pid, idx) {
   var cycle = ['prospect','contact','rdv','negocia','signe','perdu'];
-  var item = S.persons[pid].pipe[idx];
+  var item = getWeekData(S.persons[pid]).pipe[idx];
   item.status = cycle[(cycle.indexOf(item.status) + 1) % cycle.length];
   save(); render();
 }
-function saveCd(pid, key, val) { S.persons[pid].cd[key] = val; save(); }
+function saveCd(pid, key, val) { getWeekData(S.persons[pid]).cd[key] = val; save(); }
 
 function e(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
@@ -538,7 +549,7 @@ function mkFiliereBar(p, team) {
 
 function mkKpiAdm(p) {
   if (!p.aFil) return "<div class=\"no-filiere\">Ajoutez une filiere pour saisir les KPIs</div>";
-  var k = p.fData[p.aFil] ? p.fData[p.aFil].k : {};
+  var k = getFiliereWeekData(p, p.aFil).k;
   var cells = [["calls","Appels",k.calls],["dossiers","Dossiers",k.dossiers],["rdv_done","RDV S-1",k.rdv_done],["noshow","No-shows",k.noshow],["rdv_planned","RDV planifies",k.rdv_planned]];
   return "<div class=\"kpi-band\" style=\"grid-template-columns:repeat(5,1fr)\">"
     + cells.map(function(c) { return "<div class=\"kpi-cell\"><div class=\"kpi-label\">" + c[1] + "</div><div class=\"kpi-value adm\">" + (c[2] != null ? c[2] : "—") + "</div></div>"; }).join("")
@@ -552,7 +563,7 @@ function mkKpiCre(p) {
     + "<div class=\"kpi-cell\"><div class=\"kpi-label\">Candidats actifs</div><div class=\"kpi-value biz\">" + (k.candidats_actifs != null ? k.candidats_actifs : "—") + "</div></div>"
     + "</div>";
   if (!p.aFil) return g + "<div class=\"no-filiere\">Ajoutez une filiere pour les KPIs par filiere</div>";
-  var kf = p.fData[p.aFil] ? p.fData[p.aFil].k : {};
+  var kf = getFiliereWeekData(p, p.aFil).k;
   var row = "<div class=\"kpi-band\" style=\"grid-template-columns:repeat(5,1fr)\">"
     + [["offres_ymatch","Offres Ymatch",kf.offres_ymatch],["offres_pushed","Offres poussees",kf.offres_pushed],["cv_approved","CV approuves",kf.cv_approved],["bip","BIP realises",kf.bip],["alternances","Alternances signees",kf.alternances]]
       .map(function(c) { return "<div class=\"kpi-cell\"><div class=\"kpi-label\">" + c[1] + "</div><div class=\"kpi-value biz\">" + (c[2] != null ? c[2] : "—") + "</div></div>"; }).join("")
@@ -561,7 +572,7 @@ function mkKpiCre(p) {
 }
 
 function taBlock(pid, key, aa, icon, title) {
-  var content = aa[key];
+  var wd = getWeekData(S.persons[pid]); var aa = wd.aa; var content = aa[key];
   var phs = {
     bilan: '(Relances SF : rapports utilises, qui relance, resultats) (No-shows : qui, comment relance, suites) (Anomalies SF : evolution constatee) (Reinscriptions : etat des dossiers) (Autres points...)',
     plan: '(Actions prevues) (Timing : qui fait quoi et quand) (Blocages : pourquoi pas fait, comment debloquer, echeance)'
@@ -582,7 +593,7 @@ function taBlock(pid, key, aa, icon, title) {
 }
 
 function renderAdmCard(p) {
-  var aa = p.aa;
+  var aa = getWeekData(p).aa;
   var kpiBtn = p.aFil ? "<button class=\"btn sm\" data-pid=\"" + p.id + "\" data-fil=\"" + e(p.aFil) + "\" data-action=\"kpiadm\">📊 KPIs</button>" : "";
   return "<div class=\"person-card adm\">"
     + "<div class=\"card-head\"><div class=\"card-name\">" + e(p.name) + "</div><div class=\"card-btns\">" + kpiBtn + "<button class=\"btn sm danger\" data-pid=\"" + p.id + "\" data-action=\"delperson\">x</button></div></div>"
@@ -598,7 +609,7 @@ function renderAdmCard(p) {
 }
 
 function renderCreCard(p) {
-  var cd = p.cd; var pl = p.pipe || [];
+  var wd = getWeekData(p); var cd = wd.cd; var pl = wd.pipe || [];
   var kpiBtn = "<button class=\"btn sm\" data-pid=\"" + p.id + "\" data-fil=\"" + e(p.aFil || "") + "\" data-action=\"kpicre\">KPIs</button>";
   var pipeHtml = pl.length ? pl.map(function(item, i) {
     return "<div class=\"pipe-item\">"
@@ -642,11 +653,11 @@ function openReport() {
   if (adms.length) {
     html += '<div class="rteam">Charges d Admissions</div>';
     adms.forEach(function(p) {
-      var aa = p.aa;
+      var aa = getWeekData(p).aa;
       html += '<div class="rperson adm"><div class="rpname">' + e(p.name) + '</div>';
       if (p.fil.length) {
         p.fil.forEach(function(f) {
-          var k = p.fData[f] ? p.fData[f].k : {};
+          var k = getFiliereWeekData(p, f).k;
           html += '<div class="rfiliere adm">📚 ' + e(f) + '</div>'
             + '<div class="rkpis">'
             + '<span class="rkpi"><strong>' + (k.calls!=null?k.calls:'—') + '</strong> appels</span>'
@@ -666,7 +677,7 @@ function openReport() {
   if (cres.length) {
     html += '<div class="rteam">Charges de Relations Entreprises</div>';
     cres.forEach(function(p) {
-      var k = p.kpis; var cd = p.cd||{}; var pl = p.pipe||[];
+      var k = p.kpis; var wd2 = getWeekData(p); var cd = wd2.cd||{}; var pl = wd2.pipe||[];
       var signed = pl.filter(function(i){return i.status==='signe';}).length;
       var active = pl.filter(function(i){return ['contact','rdv','negocia'].indexOf(i.status)>=0;}).length;
       html += '<div class="rperson biz"><div class="rpname">' + e(p.name) + '</div>'
@@ -676,7 +687,7 @@ function openReport() {
         + '</div>';
       if (p.fil.length) {
         p.fil.forEach(function(f) {
-          var kf = p.fData[f] ? p.fData[f].k : {};
+          var kf = getFiliereWeekData(p, f).k;
           html += '<div class="rfiliere biz">📚 ' + e(f) + '</div>'
             + '<div class="rkpis">'
             + '<span class="rkpi"><strong>' + (kf.offres_ymatch!=null?kf.offres_ymatch:'—') + '</strong> offres Ymatch</span>'
